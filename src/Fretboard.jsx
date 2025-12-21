@@ -585,10 +585,15 @@ export default function Fretboard() {
                     ))}
 
                     {/* Strings Visuals */}
+                    {/* Strings Visuals */}
                     {TUNING.map((_, sIndex) => {
                         // VISUAL INVERSION: Low E (0) should be at Bottom (Row 6)
                         const visualRow = 6 - sIndex;
                         const isActive = practiceActive && currentStringIndex === sIndex;
+                        const isWound = sIndex <= 2; // Low E, A, D are wound (indices 0, 1, 2)
+
+                        // Thickness: Low E (0) should be thickest. High E (5) thinnest.
+                        const thickness = 1 + (5 - sIndex) * 0.6;
 
                         return (
                             <div
@@ -597,9 +602,17 @@ export default function Fretboard() {
                                 style={{
                                     gridColumn: '1 / -1',
                                     gridRow: visualRow,
-                                    height: `${1 + sIndex * 0.6}px`,
-                                    backgroundColor: isActive ? '#facc15' : '#585353', // Highlight active string gold
-                                    boxShadow: isActive ? '0 0 10px #facc15' : 'none',
+                                    height: `${thickness}px`,
+
+                                    // Use texture for wound strings, unless active (Gold overrides)
+                                    // Or blend them? If active, we probably want pure Gold for visibility.
+                                    // Let's use Gold if active, else Texture (for wound) or Grey (for plain).
+                                    backgroundColor: isActive ? '#facc15' : (isWound ? 'transparent' : '#aa9992'), // Plain strings silvery
+                                    backgroundImage: (!isActive && isWound) ? 'url("/string-closeup.webp")' : 'none',
+                                    backgroundRepeat: 'repeat-x',
+                                    backgroundSize: 'auto 100%',
+
+                                    boxShadow: isActive ? '0 0 10px #facc15' : '0 1px 2px rgba(0,0,0,0.6)',
                                     position: 'relative',
                                     top: '50%',
                                     transform: 'translateY(-50%)',

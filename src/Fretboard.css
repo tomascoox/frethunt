@@ -69,33 +69,34 @@
         50px minmax(0, 1.431fr) minmax(0, 1.351fr) minmax(0, 1.275fr) minmax(0, 1.203fr) minmax(0, 1.136fr) minmax(0, 1.072fr) minmax(0, 1.012fr) minmax(0, 0.955fr) minmax(0, 0.902fr) minmax(0, 0.851fr) minmax(0, 0.803fr) minmax(0, 0.758fr) minmax(0, 0.716fr) minmax(0, 0.675fr) minmax(0, 0.638fr) minmax(0, 0.602fr) minmax(0, 0.568fr) minmax(0, 0.536fr) minmax(0, 0.506fr) minmax(0, 0.478fr) minmax(0, 0.451fr) minmax(0, 0.425fr);
     grid-template-rows: repeat(6, 34px);
     /* Slimmer rows for electric guitar feel */
+    /* Slimmer rows for electric guitar feel */
     position: relative;
-    background: #1a1110;
-    /* Deep Ebony/Rosewood base */
+    /* Use the real wood texture via ::before for rotation */
+    background-color: #2e201a;
+    /* Fallback color matching wood */
+
     border: 1px solid #2d2a2a;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
     border-radius: 4px;
+    overflow: hidden;
+    /* Clip the rotated background */
 }
 
-/* Ebony Wood Texture */
+/* Rotated Wood Texture */
 .fretboard::before {
-    content: '';
+    content: "";
     position: absolute;
-    inset: 0;
-    opacity: 0.15;
-    /* Subtle horizontal grain for consistency with neck direction */
-    background-image:
-        repeating-linear-gradient(180deg,
-            transparent 0px,
-            transparent 2px,
-            rgba(0, 0, 0, 0.4) 4px,
-            transparent 6px),
-        repeating-linear-gradient(90deg,
-            rgba(255, 255, 255, 0.02) 0px,
-            transparent 50px,
-            rgba(255, 255, 255, 0.01) 100px);
-    pointer-events: none;
+    top: 50%;
+    left: 50%;
+    width: 200vw;
+    /* Massive square to ensure coverage after rotation */
+    height: 200vw;
+    transform: translate(-50%, -50%) rotate(90deg);
+    background-image: url('/fretboard-wood.webp');
+    background-repeat: repeat;
     z-index: 0;
+    /* Painted first, so behind content */
+    pointer-events: none;
 }
 
 /* Inlay Markers */
@@ -112,12 +113,12 @@
 }
 
 .marker.single {
-    width: min(14px, 60%);
+    width: min(20px, 60%);
     height: auto;
 }
 
 .marker.double {
-    width: min(14px, 60%);
+    width: min(20px, 60%);
     height: auto;
 }
 
