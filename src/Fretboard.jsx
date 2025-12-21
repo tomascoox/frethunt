@@ -112,6 +112,7 @@ export default function Fretboard() {
 
     const synthRef = useRef(null);
     const timerRef = useRef(null);
+    const timeoutsRef = useRef({}); // For managing flash timeouts
     const startTimeRef = useRef(0);
 
     // FX Synths
@@ -391,13 +392,25 @@ export default function Fretboard() {
         playNote(fullNote);
 
         if (!studyMode) {
-            // Only toggle visibility if NOT in study mode (in study mode, they stay revealed)
-            setRevealed(prev => {
-                const next = { ...prev };
-                if (next[key]) delete next[key];
-                else next[key] = true;
-                return next;
-            });
+            // EXPLORER MODE: "Flash" the note for 1s
+
+            // 1. Clear existing fade timer if user mashes same note
+            if (timeoutsRef.current[key]) {
+                clearTimeout(timeoutsRef.current[key]);
+            }
+
+            // 2. Show the note
+            setRevealed(prev => ({ ...prev, [key]: true }));
+
+            // 3. Set timer to hide it
+            timeoutsRef.current[key] = setTimeout(() => {
+                setRevealed(prev => {
+                    const next = { ...prev };
+                    delete next[key];
+                    return next;
+                });
+                delete timeoutsRef.current[key]; // Cleanup ref
+            }, 1000);
         }
     };
 
