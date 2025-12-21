@@ -410,7 +410,7 @@ export default function Fretboard() {
                     return next;
                 });
                 delete timeoutsRef.current[key]; // Cleanup ref
-            }, 1000);
+            }, 1500);
         }
     };
 
