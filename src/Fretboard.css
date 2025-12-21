@@ -1,0 +1,294 @@
+.fretboard-wrapper {
+    /* overflow-x: auto;  REMOVED: No scrolling allowed */
+    padding: 20px 40px;
+    /* Comfortable side padding */
+    /* ZERO side padding */
+    width: 100%;
+    /* Use almost full width */
+    max-width: none;
+    /* REMOVED limit: Use full window */
+    margin: 0 auto;
+    /* Center nicely */
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Controls Bar */
+.controls {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--accent);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+}
+
+.btn:hover {
+    background-color: var(--accent);
+    color: #0f172a;
+    /* Dark text on bright accent */
+    box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+/* Container for board + numbers to ensure they scroll together */
+.fretboard-scroll-container {
+    width: 100%;
+    /* Force fit */
+    /* min-width: max-content; REMOVED: Do not force expansion */
+    margin: 0 auto;
+}
+
+.fretboard {
+    display: grid;
+    width: 100%;
+    /* Ensure it takes available width but no more */
+    /*
+       Realistic Fret Spacing (Scale: 25.5")
+       Col 1: Nut/Open (fixed 50px)
+       Cols 2-23: Frets 1-22 (proportional fr units based on 17.817 formula)
+       Using minmax(0, ...fr) to force columns to shrink below content size if needed,
+       preventing the grid from blowing out the container width.
+    */
+    grid-template-columns:
+        50px minmax(0, 1.431fr) minmax(0, 1.351fr) minmax(0, 1.275fr) minmax(0, 1.203fr) minmax(0, 1.136fr) minmax(0, 1.072fr) minmax(0, 1.012fr) minmax(0, 0.955fr) minmax(0, 0.902fr) minmax(0, 0.851fr) minmax(0, 0.803fr) minmax(0, 0.758fr) minmax(0, 0.716fr) minmax(0, 0.675fr) minmax(0, 0.638fr) minmax(0, 0.602fr) minmax(0, 0.568fr) minmax(0, 0.536fr) minmax(0, 0.506fr) minmax(0, 0.478fr) minmax(0, 0.451fr) minmax(0, 0.425fr);
+    grid-template-rows: repeat(6, 34px);
+    /* Slimmer rows for electric guitar feel */
+    position: relative;
+    background: #1a1110;
+    /* Deep Ebony/Rosewood base */
+    border: 1px solid #2d2a2a;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+}
+
+/* Ebony Wood Texture */
+.fretboard::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.15;
+    /* Subtle horizontal grain for consistency with neck direction */
+    background-image:
+        repeating-linear-gradient(180deg,
+            transparent 0px,
+            transparent 2px,
+            rgba(0, 0, 0, 0.4) 4px,
+            transparent 6px),
+        repeating-linear-gradient(90deg,
+            rgba(255, 255, 255, 0.02) 0px,
+            transparent 50px,
+            rgba(255, 255, 255, 0.01) 100px);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Inlay Markers */
+.marker {
+    position: relative;
+    /* Changed from absolute to allow margin auto centering in grid */
+    border-radius: 50%;
+    background: var(--inlay-color);
+    /* transform: translate(-50%, -50%); Removed transform centering, using margin auto */
+    pointer-events: none;
+    z-index: 1;
+    box-shadow: 0 0 4px rgba(255, 255, 255, 0.4);
+    aspect-ratio: 1/1;
+}
+
+.marker.single {
+    width: min(14px, 60%);
+    height: auto;
+}
+
+.marker.double {
+    width: min(14px, 60%);
+    height: auto;
+}
+
+/* Strings */
+.string-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: var(--string-color);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Frets (Vertical lines) */
+/* Frets (Vertical lines) - EVO Gold Style */
+.fret-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    /* Slightly thicker for premium look */
+    /* 3D Gold Gradient */
+    background: linear-gradient(90deg, #8a6000, #fddb92 40%, #fddb92 60%, #8a6000);
+    z-index: 2;
+    /* Stronger Shadows for high relief effect */
+    box-shadow: -1px 0 2px rgba(0, 0, 0, 0.8), 4px 0 8px rgba(0, 0, 0, 0.9);
+}
+
+.nut-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    background: #cbd5e1;
+    z-index: 3;
+    left: 50px;
+    /* Width of col 0 */
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Note Interactive Area */
+.note-cell {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.note-circle {
+    width: min(26px, 85%);
+    /* Smaller max width */
+    height: auto;
+    aspect-ratio: 1 / 1;
+    /* Keep it circular */
+    border-radius: 50%;
+    background: var(--note-hidden);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: clamp(10px, 1.5vw, 14px);
+    /* Scale text slightly */
+    color: transparent;
+    /* Hidden text initially */
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+.note-cell:hover .note-circle {
+    transform: scale(1.1);
+    background: #475569;
+    /* Lighter slate */
+}
+
+.note-circle.revealed {
+    background: var(--note-revealed-bg);
+    color: var(--note-revealed-text);
+    transform: rotateY(360deg);
+    border-color: var(--accent);
+    transform: rotateY(360deg);
+    border-color: var(--accent);
+    box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.note-circle.success {
+    background-color: #22c55e;
+    /* Green 500 */
+    border-color: #22c55e;
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+}
+
+.note-circle.error {
+    background-color: #ef4444;
+    /* Red 500 */
+    border-color: #ef4444;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+    animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
+}
+
+@keyframes shake {
+
+    10%,
+    90% {
+        transform: translate3d(-1px, 0, 0);
+    }
+
+    20%,
+    80% {
+        transform: translate3d(2px, 0, 0);
+    }
+
+    30%,
+    50%,
+    70% {
+        transform: translate3d(-4px, 0, 0);
+    }
+
+    40%,
+    60% {
+        transform: translate3d(4px, 0, 0);
+    }
+}
+
+/* Game HUD */
+.game-hud {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 20px;
+    align-items: center;
+    background: rgba(30, 41, 59, 0.8);
+    padding: 15px 30px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+}
+
+.target-note {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #f8fafc;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+}
+
+.score-board {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.score-stats {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+/* Fret Numbers */
+.fret-numbers {
+    display: grid;
+    grid-template-columns:
+        50px minmax(0, 1.431fr) minmax(0, 1.351fr) minmax(0, 1.275fr) minmax(0, 1.203fr) minmax(0, 1.136fr) minmax(0, 1.072fr) minmax(0, 1.012fr) minmax(0, 0.955fr) minmax(0, 0.902fr) minmax(0, 0.851fr) minmax(0, 0.803fr) minmax(0, 0.758fr) minmax(0, 0.716fr) minmax(0, 0.675fr) minmax(0, 0.638fr) minmax(0, 0.602fr) minmax(0, 0.568fr) minmax(0, 0.536fr) minmax(0, 0.506fr) minmax(0, 0.478fr) minmax(0, 0.451fr) minmax(0, 0.425fr);
+    margin-top: 15px;
+}
+
+.fret-number-cell {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    user-select: none;
+}
