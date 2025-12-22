@@ -113,6 +113,12 @@ export default function Fretboard() {
     const [score, setScore] = useState(0);
     const [activeGameMode, setActiveGameMode] = useState(null); // null = Explorer, 'string-walker' = The Game
 
+    // MEMORY GAME STATE
+    const [memoryGameActive, setMemoryGameActive] = useState(false);
+    const [memoryTarget, setMemoryTarget] = useState(null); // { s, f, note: 'C#' }
+    const [memoryAllowedNotes, setMemoryAllowedNotes] = useState(NOTES); // Default all
+    const [memoryAllowedStrings, setMemoryAllowedStrings] = useState([0, 1, 2, 3, 4, 5]); // Default all
+
     // TRIAD HUNT STATE
     const [triadKey, setTriadKey] = useState('A-Major');
     const [triadSet, setTriadSet] = useState('top');
@@ -259,6 +265,106 @@ export default function Fretboard() {
             sortedNotes.forEach((n, i) => {
                 setTimeout(() => playNote(getNoteWithOctave(n.s, n.f), n.s), i * 200);
             });
+        }
+    };
+
+    // --- MEMORY GAME LOGIC ---
+
+    const failMemoryGame = () => {
+        if (timerRef.current) cancelAnimationFrame(timerRef.current);
+        setFeedbackMsg('TIME UP! GAME OVER 💀');
+        playFail();
+        setMemoryGameActive(false);
+        setTimeout(() => stopMemoryGame(), 2000);
+    };
+
+    const startMemoryTimer = () => {
+        startTimeRef.current = Date.now();
+        const duration = secondsPerNote * 1000;
+
+        const loop = () => {
+            const now = Date.now();
+            const elapsed = now - startTimeRef.current;
+            const pct = Math.min((elapsed / duration) * 100, 100);
+
+            setTimerProgress(pct);
+
+            if (pct >= 100) {
+                failMemoryGame();
+            } else {
+                timerRef.current = requestAnimationFrame(loop);
+            }
+        };
+
+        if (timerRef.current) cancelAnimationFrame(timerRef.current);
+        timerRef.current = requestAnimationFrame(loop);
+    };
+
+    const startMemoryGame = () => {
+        setMemoryGameActive(true);
+        setScore(0);
+        setFeedbackMsg('');
+        setTimerProgress(0);
+        nextMemoryTarget();
+    };
+
+    const stopMemoryGame = () => {
+        if (timerRef.current) cancelAnimationFrame(timerRef.current);
+        setMemoryGameActive(false);
+        setMemoryTarget(null);
+        setRevealed({});
+        setTimerProgress(0);
+    };
+
+    const nextMemoryTarget = () => {
+        // Build pool of valid positions based on settings
+        const validPositions = [];
+
+        memoryAllowedStrings.forEach(sIndex => {
+            if (!TUNING[sIndex]) return;
+            for (let f = 0; f <= FRET_COUNT; f++) {
+                const note = getNoteAt(sIndex, f);
+                if (memoryAllowedNotes.includes(note)) {
+                    validPositions.push({ s: sIndex, f: f, note: note });
+                }
+            }
+        });
+
+        if (validPositions.length === 0) {
+            setFeedbackMsg("NO NOTES SELECTED!");
+            stopMemoryGame();
+            return;
+        }
+
+        const randomPos = validPositions[Math.floor(Math.random() * validPositions.length)];
+        setMemoryTarget(randomPos);
+        setRevealed({});
+
+        // Reset Timer
+        startMemoryTimer();
+    };
+
+
+
+    const handleMemoryGuess = (guessedNote) => {
+        if (!memoryTarget) return;
+
+        if (guessedNote === memoryTarget.note) {
+            // Correct!
+            playWinMelody();
+            setScore(s => s + 1);
+            setFeedbackMsg('CORRECT! 🎉');
+            // Reveal the note text briefly?
+            // For now, just instant next
+            setTimeout(() => {
+                setFeedbackMsg('');
+                nextMemoryTarget();
+            }, 500);
+        } else {
+            // Wrong
+            playFail();
+            setFeedbackMsg(`NOPE! It was ${memoryTarget.note}`);
+            setScore(s => Math.max(0, s - 1));
         }
     };
 
@@ -432,9 +538,11 @@ export default function Fretboard() {
 
     const playFail = () => {
         if (failSynth.current) {
-            failSynth.current.triggerAttackRelease("C4", "4n"); // Shortened duration
-            // Slide pitch down dramatically
-            failSynth.current.frequency.rampTo("C1", 0.3); // Faster slide
+            const now = Tone.now();
+            // Melodic "Oh No" (Descending)
+            failSynth.current.triggerAttackRelease("Eb3", "8n", now);
+            failSynth.current.triggerAttackRelease("C3", "8n", now + 0.15);
+            failSynth.current.triggerAttackRelease("F#2", "4n", now + 0.3);
         }
     };
 
@@ -596,6 +704,8 @@ export default function Fretboard() {
     };
 
     const toggleNote = (stringIndex, fretIndex) => {
+        if (activeGameMode === 'memory') return; // Disable fretboard clicking in Memory Mode
+
         if (triadGameActive) {
             checkTriadClick(stringIndex, fretIndex);
             return;
@@ -734,6 +844,21 @@ export default function Fretboard() {
                     onClick={() => switchGameMode('triad-hunt')}
                 >
                     TRIAD-HUNT
+                </button>
+
+                <button
+                    className="btn"
+                    style={{
+                        backgroundColor: activeGameMode === 'memory' ? '#3b82f6' : '#1e293b',
+                        color: activeGameMode === 'memory' ? '#0f172a' : '#94a3b8',
+                        borderColor: activeGameMode === 'memory' ? '#3b82f6' : '#334155',
+                        fontSize: '1.2rem',
+                        padding: '12px 24px',
+                        letterSpacing: '1px'
+                    }}
+                    onClick={() => switchGameMode('memory')}
+                >
+                    NOTE-HUNT
                 </button>
             </div>
 
@@ -1027,6 +1152,204 @@ export default function Fretboard() {
                 </div>
             )}
 
+            {/* MEMORY GAME HUD */}
+            {activeGameMode === 'memory' && (
+                <div className="game-hud" style={{ flexDirection: 'column', gap: '15px', marginBottom: '50px', background: 'rgba(59, 130, 246, 0.1)', padding: '20px', borderRadius: '12px', border: '1px solid #3b82f6' }}>
+
+                    {!memoryGameActive ? (
+                        <div style={{ textAlign: 'center' }}>
+                            <h2 style={{ margin: '0 0 10px 0', color: '#60a5fa' }}>NOTE HUNT</h2>
+                            <p style={{ color: '#cbd5e1', marginBottom: '20px' }}>Identify the highlighted note. Configure your drill below.</p>
+
+                            {/* SETTINGS CONTAINER */}
+                            <div style={{ display: 'flex', flexDirection: 'row', gap: '50px', marginBottom: '25px', justifyContent: 'center', alignItems: 'flex-start', flexWrap: 'wrap', width: '100%' }}>
+
+                                {/* TIMER SETTING */}
+                                <div style={{ flex: '0 0 auto', width: 'fit-content', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                    <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}>Timer (Sec)</div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 1 }}>
+                                        <input
+                                            type="range"
+                                            min="1" max="10" step="1"
+                                            value={secondsPerNote}
+                                            onChange={(e) => setSecondsPerNote(Number(e.target.value))}
+                                            style={{ width: '100px', accentColor: '#3b82f6' }}
+                                        />
+                                        <span style={{ color: '#f8fafc', fontWeight: 'bold', minWidth: '30px' }}>{secondsPerNote}s</span>
+                                    </div>
+                                </div>
+
+                                {/* STRING SELECTION */}
+                                <div style={{ flex: '0 0 auto', width: 'fit-content' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                        <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Active Strings</div>
+                                        <div style={{ display: 'flex', gap: '5px' }}>
+                                            <button className="btn" style={{ padding: '2px 8px', fontSize: '0.7rem' }} onClick={() => setMemoryAllowedStrings([0, 1, 2, 3, 4, 5])}>ALL</button>
+                                            <button className="btn" style={{ padding: '2px 8px', fontSize: '0.7rem' }} onClick={() => setMemoryAllowedStrings([])}>OFF</button>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-start' }}>
+                                        {['Low E', 'A', 'D', 'G', 'B', 'High E'].map((label, idx) => {
+                                            // Map visual label to logical index (Low E is 0 in our data)
+                                            const isActive = memoryAllowedStrings.includes(idx);
+                                            return (
+                                                <button
+                                                    key={idx}
+                                                    className="btn"
+                                                    onClick={() => {
+                                                        setMemoryAllowedStrings(prev =>
+                                                            prev.includes(idx) ? prev.filter(s => s !== idx) : [...prev, idx]
+                                                        );
+                                                    }}
+                                                    style={{
+                                                        padding: '6px 10px',
+                                                        fontSize: '0.8rem',
+                                                        whiteSpace: 'nowrap',
+                                                        backgroundColor: isActive ? '#facc15' : '#334155',
+                                                        color: isActive ? '#0f172a' : '#94a3b8',
+                                                        borderColor: isActive ? '#facc15' : '#475569',
+                                                        opacity: isActive ? 1 : 0.6
+                                                    }}
+                                                >
+                                                    {label}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    {memoryAllowedStrings.length === 0 && <div style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '5px' }}>Select at least one string!</div>}
+                                </div>
+
+                                {/* NOTE SELECTION */}
+                                <div style={{ flex: '1 0 auto', maxWidth: '600px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                        <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Active Notes</div>
+                                        <div style={{ display: 'flex', gap: '5px' }}>
+                                            <button className="btn" style={{ padding: '2px 8px', fontSize: '0.7rem' }} onClick={() => setMemoryAllowedNotes(NOTES)}>ALL</button>
+                                            <button className="btn" style={{ padding: '2px 8px', fontSize: '0.7rem' }} onClick={() => setMemoryAllowedNotes(['A', 'B', 'C', 'D', 'E', 'F', 'G'])}>NATURALS</button>
+                                            <button className="btn" style={{ padding: '2px 8px', fontSize: '0.7rem' }} onClick={() => setMemoryAllowedNotes([])}>OFF</button>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: '5px' }}>
+                                        {['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'].map(note => {
+                                            const isActive = memoryAllowedNotes.includes(note);
+                                            return (
+                                                <button
+                                                    key={note}
+                                                    onClick={() => {
+                                                        setMemoryAllowedNotes(prev =>
+                                                            prev.includes(note) ? prev.filter(n => n !== note) : [...prev, note]
+                                                        );
+                                                    }}
+                                                    style={{
+                                                        minWidth: '32px', height: '32px', flexShrink: 0,
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        borderRadius: '4px',
+                                                        backgroundColor: isActive ? '#60a5fa' : '#334155',
+                                                        color: isActive ? '#fff' : '#94a3b8',
+                                                        border: 'none',
+                                                        cursor: 'pointer',
+                                                        fontWeight: 'bold',
+                                                        fontSize: '0.8rem'
+                                                    }}
+                                                >
+                                                    {note}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    {memoryAllowedNotes.length === 0 && <div style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '5px' }}>Select at least one note!</div>}
+                                </div>
+                            </div>
+
+                            <button
+                                className="btn"
+                                onClick={startMemoryGame}
+                                disabled={memoryAllowedStrings.length === 0 || memoryAllowedNotes.length === 0}
+                                style={{
+                                    backgroundColor: '#3b82f6',
+                                    color: '#fff',
+                                    fontWeight: 'bold',
+                                    fontSize: '1.2rem',
+                                    padding: '10px 30px',
+                                    opacity: (memoryAllowedStrings.length === 0 || memoryAllowedNotes.length === 0) ? 0.5 : 1,
+                                    cursor: (memoryAllowedStrings.length === 0 || memoryAllowedNotes.length === 0) ? 'not-allowed' : 'pointer'
+                                }}
+                            >
+                                START HUNT
+                            </button>
+                        </div>
+                    ) : (
+                        <div style={{ textAlign: 'center', width: '100%' }}>
+                            {/* PIE TIMER & SCORE */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '40px', marginBottom: '20px' }}>
+                                {/* SCORE */}
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600 }}>SCORE</div>
+                                    <div style={{ fontSize: '2rem', fontWeight: 800, color: '#facc15' }}>{score}</div>
+                                </div>
+
+                                {/* PIE TIMER */}
+                                <div style={{
+                                    width: '70px',
+                                    height: '70px',
+                                    borderRadius: '50%',
+                                    background: `conic-gradient(#ef4444 ${timerProgress}%, #3b82f6 0)`,
+                                    position: 'relative',
+                                    boxShadow: '0 0 15px rgba(59, 130, 246, 0.3)'
+                                }}>
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '6px', left: '6px', right: '6px', bottom: '6px',
+                                        background: '#1e293b',
+                                        borderRadius: '50%',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontWeight: '800',
+                                        fontSize: '1.2rem',
+                                        color: '#f8fafc'
+                                    }}>
+                                        {Math.ceil((100 - timerProgress) / 100 * secondsPerNote)}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ textAlign: 'center', color: '#93c5fd', minHeight: '1.5em', marginBottom: '20px', fontSize: '1.1rem', fontWeight: 'bold' }}>{feedbackMsg}</div>
+
+                            {/* NOTE BUTTONS */}
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', margin: '0 auto' }}>
+                                {['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'].map(n => (
+                                    <button
+                                        key={n}
+                                        className="btn"
+                                        onClick={() => handleMemoryGuess(n)}
+                                        style={{
+                                            minWidth: '45px',
+                                            height: '45px',
+                                            fontSize: '1rem',
+                                            fontWeight: 'bold',
+                                            backgroundColor: '#1e293b',
+                                            color: '#f8fafc',
+                                            border: '1px solid #475569',
+                                            boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                                        }}
+                                    >
+                                        {n}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <button
+                                className="btn"
+                                onClick={stopMemoryGame}
+                                style={{ marginTop: '20px', borderColor: '#ef4444', color: '#ef4444' }}
+                            >
+                                STOP GAME
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
+
             <div className="fretboard-scroll-container">
                 <div className="fretboard">
                     {/* Inlays (Background) */}
@@ -1100,6 +1423,9 @@ export default function Fretboard() {
                             // VISUAL INVERSION: Map stringIndex 0 to Row 6.
                             const visualRow = 6 - stringIndex;
 
+                            // MEMORY TARGET CHECK
+                            const isMemoryTarget = memoryGameActive && memoryTarget && memoryTarget.s === stringIndex && memoryTarget.f === fretIndex;
+
                             return (
                                 <div
                                     key={key}
@@ -1116,8 +1442,8 @@ export default function Fretboard() {
                                         }
                                     }}
                                 >
-                                    <div className={`note-circle ${revealedState ? 'revealed' : ''} ${feedbackState || ''}`}>
-                                        {note}
+                                    <div className={`note-circle ${revealedState ? 'revealed' : ''} ${feedbackState || ''} ${isMemoryTarget ? 'memory-target' : ''}`}>
+                                        {isMemoryTarget ? '' : note}
                                     </div>
                                 </div>
                             );
