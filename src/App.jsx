@@ -8,14 +8,14 @@ function App() {
           Fretboard Magic
         </h1>
         <p style={{ color: '#94a3b8', fontSize: '1.1rem' }}>
-          Unlock Pandora's Box of Fretboard Training. Choose a game and master the neck.
+          Unlock Pandora's Box of Fretboard-Training. Choose a game and master the neck. Or just play the guitar and have fun with the fretboard.
         </p>
       </header>
 
       <Fretboard />
 
       <footer style={{ marginTop: '60px', color: '#475569', fontSize: '0.9rem' }}>
-        Antigravity Fretboard v1.0
+        Magical Music Tools v1.0 created by Tomas Coox / Studio Joox AB
       </footer>
     </div>
   )
