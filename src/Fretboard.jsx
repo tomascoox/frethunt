@@ -1033,7 +1033,7 @@ export default function Fretboard() {
                     {renderInlays()}
 
                     {/* Nut Line */}
-                    <div className="nut-line" style={{ left: '50px' }}></div>
+                    <div className="nut-line" style={{ left: '50px', zIndex: 5 }}></div>
 
                     {/* Fret Lines */}
                     {Array.from({ length: FRET_COUNT }).map((_, i) => (
@@ -1082,7 +1082,7 @@ export default function Fretboard() {
                                     position: 'relative',
                                     top: '50%',
                                     transform: 'translateY(-50%)',
-                                    zIndex: 2,
+                                    zIndex: 10,
                                     transition: 'all 0.3s ease'
                                 }}
                             />
