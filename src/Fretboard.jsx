@@ -43,31 +43,12 @@ const getNoteWithOctave = (stringIndex, fretIndex) => {
     const openNoteName = openNote.slice(0, -1);
     const openNoteOctave = parseInt(openNote.slice(-1), 10);
 
-    const noteName = getNoteAt(stringIndex, fretIndex);
-    const noteIndex = NOTES.indexOf(noteName);
-    const openNoteNameIndex = NOTES.indexOf(openNoteName);
+    // Calculate absolute pitch value (semitones from C0)
+    const openSemitones = NOTES.indexOf(openNoteName) + (openNoteOctave * 12);
+    const targetSemitones = openSemitones + fretIndex;
 
-    let octave = openNoteOctave;
-    if (noteIndex < openNoteNameIndex) {
-        // If the note name is "lower" than the open string note name (e.g., open E, fret 1 is F),
-        // it means we've crossed into the next octave.
-        // This logic is simplified and assumes standard chromatic progression.
-        // A more robust solution would track semitones.
-        // For now, we'll rely on the fact that our `getNoteFromString` handles the name correctly,
-        // and we just need to adjust octave if the note "wraps around" from B to C.
-        // A simpler way: calculate semitones from C0.
-        const semitonesFromOpen = fretIndex;
-        const openSemitones = NOTES.indexOf(openNoteName) + openNoteOctave * 12;
-        const targetSemitones = openSemitones + semitonesFromOpen;
-        octave = Math.floor(targetSemitones / 12);
-    } else if (noteIndex === openNoteNameIndex && fretIndex > 0) {
-        // If note name is same as open string but fret is not 0, it must be a higher octave
-        // This is a simplification, a full semitone count is more accurate.
-        // For example, E2 at fret 12 is E3.
-        if (fretIndex >= 12) {
-            octave = openNoteOctave + Math.floor(fretIndex / 12);
-        }
-    }
+    const octave = Math.floor(targetSemitones / 12);
+    const noteName = NOTES[targetSemitones % 12];
 
     return `${noteName}${octave}`;
 };
