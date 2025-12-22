@@ -119,51 +119,76 @@ export default function Fretboard() {
     const bellSynth = useRef(null);
     const failSynth = useRef(null);
     const isProcessingRef = useRef(false); // Fix: Add missing ref for click lock
+    const isDraggingRef = useRef(false); // For drag-to-play support
+
+    // Global MouseUp to stop dragging safely
+    useEffect(() => {
+        const handleGlobalMouseUp = () => {
+            isDraggingRef.current = false;
+        };
+        window.addEventListener('mouseup', handleGlobalMouseUp);
+        return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+    }, []);
+
+    const stringSynths = useRef([]); // Array of 6 Samplers
 
     // Initialize Synths
     useEffect(() => {
         // OPTIMIZATION: Zero lookahead for instant response
         Tone.context.lookAhead = 0;
 
-        // Guitar
-        const sampler = new Tone.Sampler({
-            urls: { "E2": "E2.wav", "A2": "A2.wav", "D3": "D3.wav", "G3": "G3.wav", "B3": "B3.wav", "E4": "E4.wav" },
-            release: 1,
-            baseUrl: "https://raw.githubusercontent.com/nbrosowsky/tonejs-instruments/master/samples/guitar-acoustic/",
-            onload: () => setIsLoaded(true),
-            // Ensure instant attack
-            attack: 0,
-            curve: "exponential"
-        }).toDestination();
-
         // Tighter Reverb for snappier feel
         const reverb = new Tone.Reverb({ decay: 2.0, preDelay: 0.001, wet: 0.2 }).toDestination();
-        sampler.connect(reverb);
-        sampler.volume.value = -3; // Slightly boosted volume to compensate for shorter sustain
-        synthRef.current = sampler;
 
-        // Mario-style Coin/Bell Synth
+        const urls = { "E2": "E2.wav", "A2": "A2.wav", "D3": "D3.wav", "G3": "G3.wav", "B3": "B3.wav", "E4": "E4.wav" };
+        const baseUrl = "https://raw.githubusercontent.com/nbrosowsky/tonejs-instruments/master/samples/guitar-acoustic/";
+
+        const samplers = [];
+        let loadedCount = 0;
+
+        for (let i = 0; i < 6; i++) {
+            const s = new Tone.Sampler({
+                urls: urls,
+                baseUrl: baseUrl,
+                release: 0.2, // Short release for fast damping
+                volume: -10,
+                maxPolyphony: 1, // Start monophonic (auto-voice-stealing)
+                onload: () => {
+                    loadedCount++;
+                    if (loadedCount === 6) setIsLoaded(true);
+                }
+            }).connect(reverb);
+            samplers.push(s);
+        }
+        stringSynths.current = samplers;
+        // No single synthRef anymore
+
+        // 2. Bell Synth
         const bell = new Tone.Synth({
             oscillator: { type: "sine" },
-            envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 1 } // Super fast attack
+            envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 1 }
         }).toDestination();
         bell.volume.value = -5;
         bellSynth.current = bell;
 
-        // Falling/Fail Synth
+        // 3. Fail Synth
         const fail = new Tone.Synth({
             oscillator: { type: "sawtooth" },
-            envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.5 } // Shortened envelope
+            envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.5 }
         }).toDestination();
         fail.volume.value = -5;
         failSynth.current = fail;
 
+        // Clean up
         return () => {
-            if (synthRef.current) synthRef.current.dispose();
-            if (bellSynth.current) bellSynth.current.dispose();
-            if (failSynth.current) failSynth.current.dispose();
+            samplers.forEach(s => s.dispose());
+            reverb.dispose();
+            bell.dispose();
+            fail.dispose();
         };
     }, []);
+
+
 
     // STUDY MODE LOGIC
     useEffect(() => {
@@ -192,10 +217,45 @@ export default function Fretboard() {
             setStudyMode(true);
         }
     };
+    const activeStringNotes = useRef(new Array(6).fill(null)); // Track notes for legato/release logic
 
-    const playNote = async (note) => {
+
+    const playNote = async (note, stringIndex) => {
         await Tone.start();
-        if (synthRef.current && isLoaded) synthRef.current.triggerAttackRelease(note, "4n", Tone.now());
+        const sampler = stringSynths.current[stringIndex];
+        if (sampler && isLoaded) {
+            // 1. Dampen previous string vibration (Legato)
+            const previousNote = activeStringNotes.current[stringIndex];
+            if (previousNote) {
+                sampler.triggerRelease(previousNote, Tone.now());
+            }
+
+            // 2. Strike new note (let it ring naturally)
+            sampler.triggerAttack(note, Tone.now());
+
+            activeStringNotes.current[stringIndex] = note;
+            return;
+        }
+
+        if (false && synthRef.current && isLoaded) {
+            // 1. Cut off the previous note ON THIS STRING
+            const previousNote = activeStringNotes.current[stringIndex];
+            if (previousNote) {
+                // If the exact same note is ringing on another string (unison), this might cut it too.
+                // But it's a necessary compromise for "same string" realism without 6 sampler instances.
+                try {
+                    synthRef.current.triggerRelease(previousNote, Tone.now());
+                } catch (e) {
+                    // Ignore release errors (e.g. if note already stopped)
+                }
+            }
+
+            // 2. Play new note
+            synthRef.current.triggerAttackRelease(note, 2, Tone.now());
+
+            // 3. Track it
+            activeStringNotes.current[stringIndex] = note;
+        }
     };
 
     const playBell = () => {
@@ -294,7 +354,7 @@ export default function Fretboard() {
             // SUCCESS
             playBell();
             const fullNote = getNoteWithOctave(stringIndex, fretIndex);
-            playNote(fullNote);
+            playNote(fullNote, stringIndex); // Pass stringIndex for polyphony logic
 
             const key = `${stringIndex}-${fretIndex}`;
             setRevealed(prev => ({ ...prev, [key]: true }));
@@ -389,7 +449,7 @@ export default function Fretboard() {
         const isCurrentlyRevealed = !!revealed[key];
 
         // Always play sound
-        playNote(fullNote);
+        playNote(fullNote, stringIndex);
 
         if (!studyMode) {
             // EXPLORER MODE: "Flash" the note for 1s
@@ -693,7 +753,16 @@ export default function Fretboard() {
                                     key={key}
                                     className="note-cell"
                                     style={{ gridRow: visualRow, gridColumn: fretIndex + 1 }}
-                                    onClick={() => toggleNote(stringIndex, fretIndex)}
+                                    onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        isDraggingRef.current = true;
+                                        toggleNote(stringIndex, fretIndex);
+                                    }}
+                                    onMouseEnter={() => {
+                                        if (isDraggingRef.current) {
+                                            toggleNote(stringIndex, fretIndex);
+                                        }
+                                    }}
                                 >
                                     <div className={`note-circle ${revealedState ? 'revealed' : ''} ${feedbackState || ''}`}>
                                         {note}
