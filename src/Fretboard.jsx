@@ -116,6 +116,95 @@ export default function Fretboard() {
     // TRIAD HUNT STATE
     const [triadKey, setTriadKey] = useState('A-Major');
     const [triadSet, setTriadSet] = useState('top');
+    const [triadGameActive, setTriadGameActive] = useState(false);
+    const [triadTarget, setTriadTarget] = useState(null); // { key, set, name, notes }
+    const [triadTimeLeft, setTriadTimeLeft] = useState(60);
+
+    // Timer Ref specific for Triad Hunt
+    const triadTimerRef = useRef(null);
+
+    const startTriadGame = () => {
+        setTriadGameActive(true);
+        setScore(0);
+        setTriadTimeLeft(60);
+        setRevealed({});
+        nextTriadTarget();
+
+        // Start Timer
+        if (triadTimerRef.current) clearInterval(triadTimerRef.current);
+        triadTimerRef.current = setInterval(() => {
+            setTriadTimeLeft(prev => {
+                if (prev <= 1) {
+                    stopTriadGame();
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    };
+
+    const stopTriadGame = () => {
+        setTriadGameActive(false);
+        if (triadTimerRef.current) clearInterval(triadTimerRef.current);
+        // Play Game Over sound?
+    };
+
+    const nextTriadTarget = () => {
+        // Pick Random Shape
+        const keys = ['A-Major', 'F#-Minor'];
+        const sets = ['top', 'middle', 'bottom'];
+        const shapes = ['Root Pos', '1st Inv', '2nd Inv'];
+
+        const rKey = keys[Math.floor(Math.random() * keys.length)];
+        const rSet = sets[Math.floor(Math.random() * sets.length)];
+        const rShapeName = shapes[Math.floor(Math.random() * shapes.length)];
+
+        const shapeData = TRIAD_SHAPES[rKey][rSet].find(s => s.name === rShapeName);
+
+        setTriadTarget({
+            key: rKey,
+            set: rSet,
+            name: rShapeName,
+            notes: shapeData.notes
+        });
+        setRevealed({}); // Hide notes, user must find them!
+    };
+
+    // Check click for Triad Game
+    const checkTriadClick = (stringIndex, fretIndex) => {
+        if (!triadGameActive || !triadTarget) return;
+
+        // Is this note part of the target?
+        const isCorrect = triadTarget.notes.some(n => n.s === stringIndex && n.f === fretIndex);
+
+        if (isCorrect) {
+            // Reveal it
+            const key = `${stringIndex}-${fretIndex}`;
+            if (!revealed[key]) {
+                const noteName = getNoteWithOctave(stringIndex, fretIndex);
+                playNote(noteName, stringIndex);
+
+                const newRevealed = { ...revealed, [key]: true };
+                setRevealed(newRevealed);
+
+                // Check if full triad found (3 notes)
+                if (Object.keys(newRevealed).length === 3) {
+                    // SUCCESS!
+                    setScore(s => s + 1);
+                    // Play Win Sound (Arpeggio?)
+                    playWinMelody(); // Or just a bell
+                    // Delay next target slightly
+                    setTimeout(() => {
+                        nextTriadTarget();
+                    }, 500);
+                }
+            }
+        } else {
+            // WRONG NOTE
+            playFail();
+            // Optional: flash red?
+        }
+    };
 
     const switchGameMode = (mode) => {
         if (practiceActive) stopPractice(); // Stop any running game
@@ -487,6 +576,11 @@ export default function Fretboard() {
     };
 
     const toggleNote = (stringIndex, fretIndex) => {
+        if (triadGameActive) {
+            checkTriadClick(stringIndex, fretIndex);
+            return;
+        }
+
         if (practiceActive) {
             handlePracticeClick(stringIndex, fretIndex);
             return;
@@ -742,90 +836,147 @@ export default function Fretboard() {
             {activeGameMode === 'triad-hunt' && (
                 <div className="game-hud" style={{ flexDirection: 'column', gap: '15px', marginBottom: '50px', background: 'rgba(30, 41, 59, 0.5)', padding: '20px', borderRadius: '12px', border: '1px solid #8b5cf6' }}>
 
-                    {/* Header */}
-                    <div style={{ textAlign: 'center', marginBottom: '10px' }}>
-                        <h2 style={{ margin: '0 0 5px 0', color: '#8b5cf6', letterSpacing: '2px' }}>THE LIBRARY</h2>
-                        <p style={{ margin: '0', color: '#94a3b8', fontSize: '0.9rem' }}>
-                            Explore the shapes. Select a Key, String Set, and Inversion to reveal the truth.
-                        </p>
-                    </div>
+                    {!triadGameActive ? (
+                        <>
+                            {/* Header */}
+                            <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+                                <h2 style={{ margin: '0 0 5px 0', color: '#8b5cf6', letterSpacing: '2px' }}>THE LIBRARY</h2>
+                                <p style={{ margin: '0', color: '#94a3b8', fontSize: '0.9rem' }}>
+                                    Explore the shapes. Select a Key, String Set, and Inversion to reveal the truth.
+                                </p>
+                            </div>
 
-                    {/* Controls Row */}
-                    <div style={{ display: 'flex', gap: '20px', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
+                            {/* Controls Row */}
+                            <div style={{ display: 'flex', gap: '20px', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
 
-                        {/* KEY SELECTOR */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>KEY</label>
-                            <div style={{ display: 'flex', gap: '5px' }}>
-                                {['A-Major', 'F#-Minor'].map(k => (
+                                {/* KEY SELECTOR */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                    <label style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>KEY</label>
+                                    <div style={{ display: 'flex', gap: '5px' }}>
+                                        {['A-Major', 'F#-Minor'].map(k => (
+                                            <button
+                                                key={k}
+                                                className="btn"
+                                                style={{
+                                                    backgroundColor: triadKey === k ? '#8b5cf6' : 'transparent',
+                                                    color: triadKey === k ? '#fff' : '#94a3b8',
+                                                    borderColor: triadKey === k ? '#8b5cf6' : '#475569',
+                                                    fontSize: '0.9rem', padding: '6px 12px'
+                                                }}
+                                                onClick={() => setTriadKey(k)}
+                                            >
+                                                {k}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* SET SELECTOR */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                    <label style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>STRING SET</label>
+                                    <div style={{ display: 'flex', gap: '5px' }}>
+                                        {['top', 'middle', 'bottom'].map(s => (
+                                            <button
+                                                key={s}
+                                                className="btn"
+                                                style={{
+                                                    backgroundColor: triadSet === s ? '#8b5cf6' : 'transparent',
+                                                    color: triadSet === s ? '#fff' : '#94a3b8',
+                                                    borderColor: triadSet === s ? '#8b5cf6' : '#475569',
+                                                    textTransform: 'uppercase',
+                                                    fontSize: '0.9rem', padding: '6px 12px'
+                                                }}
+                                                onClick={() => setTriadSet(s)}
+                                            >
+                                                {s}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            {/* SHAPE SELECTORS (THE LIBRARY BUTTONS) */}
+                            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', marginTop: '10px' }}>
+                                {['Root Pos', '1st Inv', '2nd Inv'].map(shapeName => (
                                     <button
-                                        key={k}
+                                        key={shapeName}
                                         className="btn"
                                         style={{
-                                            backgroundColor: triadKey === k ? '#8b5cf6' : 'transparent',
-                                            color: triadKey === k ? '#fff' : '#94a3b8',
-                                            borderColor: triadKey === k ? '#8b5cf6' : '#475569',
-                                            fontSize: '0.9rem', padding: '6px 12px'
+                                            borderColor: '#e2e8f0',
+                                            color: '#f8fafc',
+                                            fontWeight: 'bold',
+                                            padding: '15px 30px',
+                                            fontSize: '1rem',
+                                            backgroundColor: '#1e293b' // Default dark
                                         }}
-                                        onClick={() => setTriadKey(k)}
+                                        onClick={() => showTriadShape(shapeName)}
                                     >
-                                        {k}
+                                        {shapeName === 'Root Pos' ? 'ROOT' : shapeName.toUpperCase()}
                                     </button>
                                 ))}
                             </div>
-                        </div>
 
-                        {/* SET SELECTOR */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>STRING SET</label>
-                            <div style={{ display: 'flex', gap: '5px' }}>
-                                {['top', 'middle', 'bottom'].map(s => (
-                                    <button
-                                        key={s}
-                                        className="btn"
-                                        style={{
-                                            backgroundColor: triadSet === s ? '#8b5cf6' : 'transparent',
-                                            color: triadSet === s ? '#fff' : '#94a3b8',
-                                            borderColor: triadSet === s ? '#8b5cf6' : '#475569',
-                                            textTransform: 'uppercase',
-                                            fontSize: '0.9rem', padding: '6px 12px'
-                                        }}
-                                        onClick={() => setTriadSet(s)}
-                                    >
-                                        {s}
-                                    </button>
-                                ))}
+                            {/* Start Game Button */}
+                            <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'center', borderTop: '1px solid #475569', paddingTop: '20px' }}>
+                                <button
+                                    className="btn"
+                                    onClick={startTriadGame}
+                                    style={{
+                                        backgroundColor: '#8b5cf6',
+                                        color: '#0f172a',
+                                        fontSize: '1.2rem',
+                                        padding: '12px 40px',
+                                        fontWeight: '800',
+                                        boxShadow: '0 0 15px rgba(139, 92, 246, 0.3)'
+                                    }}
+                                >
+                                    START 1-MINUTE DRILL
+                                </button>
                             </div>
-                        </div>
+                        </>
+                    ) : (
+                        /* GAME ACTIVE HUD */
+                        <div style={{ textAlign: 'center', color: '#f8fafc' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
+                                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#94a3b8' }}>SCORE: <span style={{ color: '#f59e0b', fontSize: '2rem' }}>{score}</span></div>
+                                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: triadTimeLeft < 10 ? '#ef4444' : '#f8fafc' }}>
+                                    {triadTimeLeft}s
+                                </div>
+                            </div>
 
-                    </div>
+                            <div style={{ margin: '30px 0', padding: '20px', background: '#1e293b', borderRadius: '12px' }}>
+                                <div style={{ fontSize: '1rem', color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '10px' }}>FIND THIS TRIAD</div>
 
-                    {/* SHAPE SELECTORS (THE LIBRARY BUTTONS) */}
-                    <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', marginTop: '10px' }}>
-                        {['Root Pos', '1st Inv', '2nd Inv'].map(shapeName => (
+                                <div style={{ fontSize: '2.5rem', fontWeight: '900', color: '#8b5cf6', margin: '0', textShadow: '0 0 20px rgba(139, 92, 246, 0.5)', lineHeight: '1' }}>
+                                    {triadTarget && triadTarget.key.replace('-', ' ').toUpperCase()}
+                                </div>
+
+                                <div style={{ fontSize: '1.5rem', color: '#f8fafc', marginTop: '15px', display: 'flex', justifyContent: 'center', gap: '15px', alignItems: 'center' }}>
+                                    <span style={{ color: '#2dd4bf', background: 'rgba(45, 212, 191, 0.1)', padding: '4px 12px', borderRadius: '6px' }}>
+                                        {triadTarget && triadTarget.set.toUpperCase()} SET
+                                    </span>
+                                    {/* Arrow icon? */}
+                                    <span style={{ fontSize: '1.2rem', color: '#64748b' }}>➜</span>
+                                    <span style={{ fontWeight: 'bold' }}>
+                                        {triadTarget && (triadTarget.name === 'Root Pos' ? 'ROOT' : triadTarget.name.toUpperCase())}
+                                    </span>
+                                </div>
+                            </div>
+
                             <button
-                                key={shapeName}
                                 className="btn"
-                                style={{
-                                    borderColor: '#e2e8f0',
-                                    color: '#f8fafc',
-                                    fontWeight: 'bold',
-                                    padding: '15px 30px',
-                                    fontSize: '1rem',
-                                    backgroundColor: '#1e293b' // Default dark
-                                }}
-                                onClick={() => showTriadShape(shapeName)}
+                                onClick={stopTriadGame}
+                                style={{ borderColor: '#ef4444', color: '#ef4444', marginTop: '10px', fontSize: '0.9rem' }}
                             >
-                                {shapeName === 'Root Pos' ? 'ROOT' : shapeName.toUpperCase()}
+                                GIVE UP
                             </button>
-                        ))}
-                    </div>
-
+                        </div>
+                    )}
                 </div>
             )}
 
             <div className="fretboard-scroll-container">
-
                 <div className="fretboard">
                     {/* Inlays (Background) */}
                     {renderInlays()}
