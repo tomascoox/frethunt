@@ -61,36 +61,36 @@ const getNoteWithOctave = (stringIndex, fretIndex) => {
 const TRIAD_SHAPES = {
     'A-Major': {
         'top': [ // G, B, e (3, 4, 5)
-            { name: '1st Inv', notes: [{ s: 3, f: 6 }, { s: 4, f: 5 }, { s: 5, f: 5 }] },
-            { name: '2nd Inv', notes: [{ s: 3, f: 9 }, { s: 4, f: 10 }, { s: 5, f: 9 }] },
-            { name: 'Root Pos', notes: [{ s: 3, f: 14 }, { s: 4, f: 14 }, { s: 5, f: 12 }] }
+            { name: '1st Inv', notes: [{ s: 3, f: 6 }, { s: 4, f: 5 }, { s: 5, f: 5 }] },  // Pos 1
+            { name: '2nd Inv', notes: [{ s: 3, f: 9 }, { s: 4, f: 10 }, { s: 5, f: 9 }] }, // Pos 2
+            { name: 'Root Pos', notes: [{ s: 3, f: 14 }, { s: 4, f: 14 }, { s: 5, f: 12 }] } // Pos 3
         ],
         'middle': [ // D, G, B (2, 3, 4)
-            { name: '1st Inv', notes: [{ s: 2, f: 11 }, { s: 3, f: 9 }, { s: 4, f: 10 }] },
-            { name: '2nd Inv', notes: [{ s: 2, f: 14 }, { s: 3, f: 14 }, { s: 4, f: 14 }] },
-            { name: 'Root Pos', notes: [{ s: 2, f: 7 }, { s: 3, f: 6 }, { s: 4, f: 5 }] }
+            { name: 'Root Pos', notes: [{ s: 2, f: 7 }, { s: 3, f: 6 }, { s: 4, f: 5 }] },   // Pos 1
+            { name: '1st Inv', notes: [{ s: 2, f: 11 }, { s: 3, f: 9 }, { s: 4, f: 10 }] }, // Pos 2
+            { name: '2nd Inv', notes: [{ s: 2, f: 14 }, { s: 3, f: 14 }, { s: 4, f: 14 }] } // Pos 3
         ],
         'bottom': [ // A, D, G (1, 2, 3)
-            { name: 'Root Pos', notes: [{ s: 1, f: 12 }, { s: 2, f: 11 }, { s: 3, f: 9 }] },
-            { name: '1st Inv', notes: [{ s: 1, f: 16 }, { s: 2, f: 14 }, { s: 3, f: 14 }] },
-            { name: '2nd Inv', notes: [{ s: 1, f: 7 }, { s: 2, f: 7 }, { s: 3, f: 6 }] }
+            { name: '2nd Inv', notes: [{ s: 1, f: 7 }, { s: 2, f: 7 }, { s: 3, f: 6 }] },    // Pos 1
+            { name: 'Root Pos', notes: [{ s: 1, f: 12 }, { s: 2, f: 11 }, { s: 3, f: 9 }] }, // Pos 2
+            { name: '1st Inv', notes: [{ s: 1, f: 16 }, { s: 2, f: 14 }, { s: 3, f: 14 }] }  // Pos 3
         ]
     },
     'F#-Minor': { // F#, A, C#
         'top': [ // G, B, e (3, 4, 5)
-            { name: '1st Inv', notes: [{ s: 3, f: 2 }, { s: 4, f: 2 }, { s: 5, f: 2 }] },
-            { name: '2nd Inv', notes: [{ s: 3, f: 6 }, { s: 4, f: 7 }, { s: 5, f: 5 }] },
-            { name: 'Root Pos', notes: [{ s: 3, f: 11 }, { s: 4, f: 10 }, { s: 5, f: 9 }] }
+            { name: '1st Inv', notes: [{ s: 3, f: 2 }, { s: 4, f: 2 }, { s: 5, f: 2 }] },   // Pos 1
+            { name: '2nd Inv', notes: [{ s: 3, f: 6 }, { s: 4, f: 7 }, { s: 5, f: 5 }] },   // Pos 2
+            { name: 'Root Pos', notes: [{ s: 3, f: 11 }, { s: 4, f: 10 }, { s: 5, f: 9 }] } // Pos 3
         ],
         'middle': [ // D, G, B (2, 3, 4)
-            { name: '1st Inv', notes: [{ s: 2, f: 7 }, { s: 3, f: 6 }, { s: 4, f: 7 }] },
-            { name: '2nd Inv', notes: [{ s: 2, f: 11 }, { s: 3, f: 11 }, { s: 4, f: 10 }] },
-            { name: 'Root Pos', notes: [{ s: 2, f: 4 }, { s: 3, f: 2 }, { s: 4, f: 2 }] }
+            { name: 'Root Pos', notes: [{ s: 2, f: 4 }, { s: 3, f: 2 }, { s: 4, f: 2 }] },   // Pos 1
+            { name: '1st Inv', notes: [{ s: 2, f: 7 }, { s: 3, f: 6 }, { s: 4, f: 7 }] },   // Pos 2
+            { name: '2nd Inv', notes: [{ s: 2, f: 11 }, { s: 3, f: 11 }, { s: 4, f: 10 }] } // Pos 3
         ],
         'bottom': [ // A, D, G (1, 2, 3)
-            { name: 'Root Pos', notes: [{ s: 1, f: 9 }, { s: 2, f: 7 }, { s: 3, f: 6 }] },
-            { name: '1st Inv', notes: [{ s: 1, f: 12 }, { s: 2, f: 11 }, { s: 3, f: 11 }] },
-            { name: '2nd Inv', notes: [{ s: 1, f: 4 }, { s: 2, f: 4 }, { s: 3, f: 2 }] }
+            { name: '2nd Inv', notes: [{ s: 1, f: 4 }, { s: 2, f: 4 }, { s: 3, f: 2 }] },    // Pos 1
+            { name: 'Root Pos', notes: [{ s: 1, f: 9 }, { s: 2, f: 7 }, { s: 3, f: 6 }] },   // Pos 2
+            { name: '1st Inv', notes: [{ s: 1, f: 12 }, { s: 2, f: 11 }, { s: 3, f: 11 }] }  // Pos 3
         ]
     }
 };
@@ -116,6 +116,7 @@ export default function Fretboard() {
     // TRIAD HUNT STATE
     const [triadKey, setTriadKey] = useState('A-Major');
     const [triadSet, setTriadSet] = useState('top');
+    const [triadGameMode, setTriadGameMode] = useState('current'); // 'current' or 'all'
     const [triadGameActive, setTriadGameActive] = useState(false);
     const [triadTarget, setTriadTarget] = useState(null); // { key, set, name, notes }
     const [triadTimeLeft, setTriadTimeLeft] = useState(60);
@@ -123,12 +124,13 @@ export default function Fretboard() {
     // Timer Ref specific for Triad Hunt
     const triadTimerRef = useRef(null);
 
-    const startTriadGame = () => {
+    const startTriadGame = (mode = 'current') => {
+        setTriadGameMode(mode);
         setTriadGameActive(true);
         setScore(0);
         setTriadTimeLeft(60);
         setRevealed({});
-        nextTriadTarget();
+        nextTriadTarget(mode); // Pass mode to ensure immediate effect
 
         // Start Timer
         if (triadTimerRef.current) clearInterval(triadTimerRef.current);
@@ -149,22 +151,38 @@ export default function Fretboard() {
         // Play Game Over sound?
     };
 
-    const nextTriadTarget = () => {
-        // Pick Random Shape
-        const keys = ['A-Major', 'F#-Minor'];
-        const sets = ['top', 'middle', 'bottom'];
+    const nextTriadTarget = (modeOverride) => {
+        const mode = modeOverride || triadGameMode;
+
+        let keys, sets;
+
+        if (mode === 'current') {
+            keys = [triadKey];
+            sets = [triadSet];
+        } else {
+            keys = ['A-Major', 'F#-Minor'];
+            sets = ['top', 'middle', 'bottom'];
+        }
+
         const shapes = ['Root Pos', '1st Inv', '2nd Inv'];
 
         const rKey = keys[Math.floor(Math.random() * keys.length)];
         const rSet = sets[Math.floor(Math.random() * sets.length)];
-        const rShapeName = shapes[Math.floor(Math.random() * shapes.length)];
+        const rShapeIndex = Math.floor(Math.random() * shapes.length);
+        const rShapeName = shapes[rShapeIndex];
 
-        const shapeData = TRIAD_SHAPES[rKey][rSet].find(s => s.name === rShapeName);
+        // Note: rShapeName is still needed to find object, but we now rely on array index for "Pos 1, 2, 3"
+        // Actually, our sorted array logic means we can just pick index 0, 1, or 2.
+
+        // Let's explicitly pick index 0, 1, or 2
+        const rIndex = Math.floor(Math.random() * 3);
+        const shapeData = TRIAD_SHAPES[rKey][rSet][rIndex];
 
         setTriadTarget({
             key: rKey,
             set: rSet,
-            name: rShapeName,
+            name: shapeData.name, // e.g. '1st Inv'
+            posLabel: `POS ${rIndex + 1}`, // e.g. 'POS 1'
             notes: shapeData.notes
         });
         setRevealed({}); // Hide notes, user must find them!
@@ -220,10 +238,10 @@ export default function Fretboard() {
         }
     };
 
-    const showTriadShape = (shapeName) => {
+    const showTriadByPosition = (index) => {
         setRevealed({});
         const shapes = TRIAD_SHAPES[triadKey][triadSet];
-        const shape = shapes.find(s => s.name === shapeName);
+        const shape = shapes[index];
 
         if (shape) {
             const newRevealed = {};
@@ -232,8 +250,10 @@ export default function Fretboard() {
             });
             setRevealed(newRevealed);
 
+            // Feedback
+            setFeedbackMsg(`${shape.name.toUpperCase()} (POS ${index + 1})`);
+
             // Play Arpeggio
-            // Sort by string index (Low pitch strings first: 0..5)
             const sortedNotes = [...shape.notes].sort((a, b) => a.s - b.s);
 
             sortedNotes.forEach((n, i) => {
@@ -896,42 +916,73 @@ export default function Fretboard() {
 
                             </div>
 
-                            {/* SHAPE SELECTORS (THE LIBRARY BUTTONS) */}
-                            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', marginTop: '10px' }}>
-                                {['Root Pos', '1st Inv', '2nd Inv'].map(shapeName => (
-                                    <button
-                                        key={shapeName}
-                                        className="btn"
-                                        style={{
-                                            borderColor: '#e2e8f0',
-                                            color: '#f8fafc',
-                                            fontWeight: 'bold',
-                                            padding: '15px 30px',
-                                            fontSize: '1rem',
-                                            backgroundColor: '#1e293b' // Default dark
-                                        }}
-                                        onClick={() => showTriadShape(shapeName)}
-                                    >
-                                        {shapeName === 'Root Pos' ? 'ROOT' : shapeName.toUpperCase()}
-                                    </button>
-                                ))}
+                            {/* SHAPE SELECTORS (1, 2, 3) */}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '10px' }}>
+                                <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+                                    {[0, 1, 2].map(i => (
+                                        <button
+                                            key={i}
+                                            className="btn"
+                                            style={{
+                                                borderColor: '#e2e8f0',
+                                                color: '#f8fafc',
+                                                fontWeight: 'bold',
+                                                width: '60px',
+                                                height: '60px',
+                                                fontSize: '1.5rem',
+                                                backgroundColor: '#1e293b', // Default dark
+                                                borderRadius: '50%' // Circular buttons
+                                            }}
+                                            onClick={() => showTriadByPosition(i)}
+                                        >
+                                            {i + 1}
+                                        </button>
+                                    ))}
+                                </div>
+                                {/* Label for selected shape */}
+                                <div style={{ minHeight: '20px', marginTop: '10px', color: '#64748b', fontSize: '0.9rem', fontWeight: '600', letterSpacing: '1px' }}>
+                                    {feedbackMsg}
+                                </div>
                             </div>
 
-                            {/* Start Game Button */}
-                            <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'center', borderTop: '1px solid #475569', paddingTop: '20px' }}>
+                            {/* Start Game Buttons */}
+                            <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'center', gap: '20px', borderTop: '1px solid #475569', paddingTop: '20px' }}>
                                 <button
                                     className="btn"
-                                    onClick={startTriadGame}
+                                    onClick={() => startTriadGame('current')}
                                     style={{
                                         backgroundColor: '#8b5cf6',
                                         color: '#0f172a',
-                                        fontSize: '1.2rem',
-                                        padding: '12px 40px',
+                                        fontSize: '1rem',
+                                        padding: '12px 20px',
                                         fontWeight: '800',
-                                        boxShadow: '0 0 15px rgba(139, 92, 246, 0.3)'
+                                        boxShadow: '0 0 15px rgba(139, 92, 246, 0.3)',
+                                        display: 'flex', flexDirection: 'column', alignItems: 'center'
                                     }}
                                 >
-                                    START 1-MINUTE DRILL
+                                    <span>DRILL SELECTED</span>
+                                    <span style={{ fontSize: '0.7em', fontWeight: '400', marginTop: '2px' }}>
+                                        {triadKey} • {triadSet.toUpperCase()}
+                                    </span>
+                                </button>
+
+                                <button
+                                    className="btn"
+                                    onClick={() => startTriadGame('all')}
+                                    style={{
+                                        backgroundColor: 'transparent',
+                                        color: '#f8fafc',
+                                        fontSize: '1rem',
+                                        padding: '12px 20px',
+                                        fontWeight: '800',
+                                        border: '1px solid #475569',
+                                        display: 'flex', flexDirection: 'column', alignItems: 'center'
+                                    }}
+                                >
+                                    <span>DRILL EVERYTHING</span>
+                                    <span style={{ fontSize: '0.7em', fontWeight: '400', marginTop: '2px', color: '#94a3b8' }}>
+                                        Full Fretboard Chaos
+                                    </span>
                                 </button>
                             </div>
                         </>
@@ -959,7 +1010,7 @@ export default function Fretboard() {
                                     {/* Arrow icon? */}
                                     <span style={{ fontSize: '1.2rem', color: '#64748b' }}>➜</span>
                                     <span style={{ fontWeight: 'bold' }}>
-                                        {triadTarget && (triadTarget.name === 'Root Pos' ? 'ROOT' : triadTarget.name.toUpperCase())}
+                                        {triadTarget && `${triadTarget.posLabel} (${triadTarget.name === 'Root Pos' ? 'ROOT' : triadTarget.name.toUpperCase()})`}
                                     </span>
                                 </div>
                             </div>
