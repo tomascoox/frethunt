@@ -113,12 +113,12 @@
 }
 
 .marker.single {
-    width: min(20px, 60%);
+    width: min(26px, 70%);
     height: auto;
 }
 
 .marker.double {
-    width: min(20px, 60%);
+    width: min(26px, 70%);
     height: auto;
 }
 
@@ -139,8 +139,7 @@
     position: absolute;
     top: 0;
     bottom: 0;
-    width: 8px;
-    /* DEBUG WIDTH */
+    width: 6px;
     /* Slightly thicker for premium look */
     /* 3D Gold Gradient */
     background: linear-gradient(90deg, #8a6000, #fddb92 35%, #fddb92 65%, #8a6000);
