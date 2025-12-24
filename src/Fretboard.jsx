@@ -1193,7 +1193,7 @@ export default function Fretboard() {
                         }}
                         onClick={() => switchGameMode('chord-designer')}
                     >
-                        CHORD-DESIGNER
+                        TRIADS
                     </button>
                 </div>
 
@@ -1301,12 +1301,11 @@ export default function Fretboard() {
                             </div>
                         </div>
 
-                        {/* ROW 3: STRINGS */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'center' }}>
-                            <label style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>ACTIVE STRINGS</label>
-                            <div style={{ display: 'flex', gap: '5px' }}>
-                                {/* Reverse order: High E (1) to Low E (6) */}
-                                {[5, 4, 3, 2, 1, 0].map((stringIndex) => (
+                            <label style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600, marginBottom: '5px' }}>ACTIVE STRINGS</label>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '4px', width: '260px' }}>
+                                {/* Row 1: Keys */}
+                                {[5, 4, 3, 2, 1, 0].map((stringIndex, i) => (
                                     <button
                                         key={stringIndex}
                                         className="btn"
@@ -1319,14 +1318,102 @@ export default function Fretboard() {
                                             backgroundColor: designerStrings.includes(stringIndex) ? '#f43f5e' : '#1e293b',
                                             color: designerStrings.includes(stringIndex) ? '#fff' : '#94a3b8',
                                             borderColor: designerStrings.includes(stringIndex) ? '#f43f5e' : '#475569',
-                                            width: '36px', padding: '6px 0',
-                                            opacity: designerStrings.includes(stringIndex) ? 1 : 0.5
+                                            padding: '8px 0',
+                                            fontSize: '0.9rem',
+                                            fontWeight: 'bold',
+                                            width: '100%',
+                                            opacity: designerStrings.includes(stringIndex) ? 1 : 0.5,
+                                            gridColumn: i + 1,
+                                            gridRow: 1,
+                                            borderRadius: '6px',
+                                            marginBottom: '0px'
                                         }}
                                     >
-                                        {/* Label 1 (High E) to 6 (Low E) */}
                                         {6 - stringIndex}
                                     </button>
                                 ))}
+
+                                {/* Helper for Brackets */}
+                                {/* We make the text break the line using Flexbox wings */}
+
+                                {/* Row 2: Set 1 & Set 4 */}
+                                <div onClick={() => setDesignerStrings([5, 4, 3])} style={{ gridColumn: '1 / span 3', gridRow: 2, cursor: 'pointer', marginTop: '4px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'flex-end', height: '14px' }}>
+                                        <div style={{
+                                            borderLeft: `1px solid ${JSON.stringify(designerStrings.slice().sort()) === JSON.stringify([5, 4, 3].sort()) ? '#f43f5e' : '#64748b'}`,
+                                            borderBottom: `1px solid ${JSON.stringify(designerStrings.slice().sort()) === JSON.stringify([5, 4, 3].sort()) ? '#f43f5e' : '#64748b'}`,
+                                            flex: 1, height: '100%', borderBottomLeftRadius: '4px'
+                                        }}></div>
+                                        <span style={{
+                                            fontSize: '0.6rem', padding: '0 4px', lineHeight: '1', transform: 'translateY(50%)', fontWeight: '800',
+                                            color: JSON.stringify(designerStrings.slice().sort()) === JSON.stringify([5, 4, 3].sort()) ? '#f43f5e' : '#64748b'
+                                        }}>SET 1</span>
+                                        <div style={{
+                                            borderRight: `1px solid ${JSON.stringify(designerStrings.slice().sort()) === JSON.stringify([5, 4, 3].sort()) ? '#f43f5e' : '#64748b'}`,
+                                            borderBottom: `1px solid ${JSON.stringify(designerStrings.slice().sort()) === JSON.stringify([5, 4, 3].sort()) ? '#f43f5e' : '#64748b'}`,
+                                            flex: 1, height: '100%', borderBottomRightRadius: '4px'
+                                        }}></div>
+                                    </div>
+                                </div>
+
+                                <div onClick={() => setDesignerStrings([2, 1, 0])} style={{ gridColumn: '4 / span 3', gridRow: 2, cursor: 'pointer', marginTop: '4px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'flex-end', height: '14px' }}>
+                                        <div style={{
+                                            borderLeft: `1px solid ${JSON.stringify(designerStrings.slice().sort()) === JSON.stringify([2, 1, 0].sort()) ? '#f43f5e' : '#64748b'}`,
+                                            borderBottom: `1px solid ${JSON.stringify(designerStrings.slice().sort()) === JSON.stringify([2, 1, 0].sort()) ? '#f43f5e' : '#64748b'}`,
+                                            flex: 1, height: '100%', borderBottomLeftRadius: '4px'
+                                        }}></div>
+                                        <span style={{
+                                            fontSize: '0.6rem', padding: '0 4px', lineHeight: '1', transform: 'translateY(50%)', fontWeight: '800',
+                                            color: JSON.stringify(designerStrings.slice().sort()) === JSON.stringify([2, 1, 0].sort()) ? '#f43f5e' : '#64748b'
+                                        }}>SET 4</span>
+                                        <div style={{
+                                            borderRight: `1px solid ${JSON.stringify(designerStrings.slice().sort()) === JSON.stringify([2, 1, 0].sort()) ? '#f43f5e' : '#64748b'}`,
+                                            borderBottom: `1px solid ${JSON.stringify(designerStrings.slice().sort()) === JSON.stringify([2, 1, 0].sort()) ? '#f43f5e' : '#64748b'}`,
+                                            flex: 1, height: '100%', borderBottomRightRadius: '4px'
+                                        }}></div>
+                                    </div>
+                                </div>
+
+                                {/* Row 3: Set 2 */}
+                                <div onClick={() => setDesignerStrings([4, 3, 2])} style={{ gridColumn: '2 / span 3', gridRow: 3, cursor: 'pointer', marginTop: '2px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'flex-end', height: '14px' }}>
+                                        <div style={{
+                                            borderLeft: `1px solid ${JSON.stringify(designerStrings.slice().sort()) === JSON.stringify([4, 3, 2].sort()) ? '#f43f5e' : '#64748b'}`,
+                                            borderBottom: `1px solid ${JSON.stringify(designerStrings.slice().sort()) === JSON.stringify([4, 3, 2].sort()) ? '#f43f5e' : '#64748b'}`,
+                                            flex: 1, height: '100%', borderBottomLeftRadius: '4px'
+                                        }}></div>
+                                        <span style={{
+                                            fontSize: '0.6rem', padding: '0 4px', lineHeight: '1', transform: 'translateY(50%)', fontWeight: '800',
+                                            color: JSON.stringify(designerStrings.slice().sort()) === JSON.stringify([4, 3, 2].sort()) ? '#f43f5e' : '#64748b'
+                                        }}>SET 2</span>
+                                        <div style={{
+                                            borderRight: `1px solid ${JSON.stringify(designerStrings.slice().sort()) === JSON.stringify([4, 3, 2].sort()) ? '#f43f5e' : '#64748b'}`,
+                                            borderBottom: `1px solid ${JSON.stringify(designerStrings.slice().sort()) === JSON.stringify([4, 3, 2].sort()) ? '#f43f5e' : '#64748b'}`,
+                                            flex: 1, height: '100%', borderBottomRightRadius: '4px'
+                                        }}></div>
+                                    </div>
+                                </div>
+
+                                {/* Row 4: Set 3 */}
+                                <div onClick={() => setDesignerStrings([3, 2, 1])} style={{ gridColumn: '3 / span 3', gridRow: 4, cursor: 'pointer', marginTop: '2px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'flex-end', height: '14px' }}>
+                                        <div style={{
+                                            borderLeft: `1px solid ${JSON.stringify(designerStrings.slice().sort()) === JSON.stringify([3, 2, 1].sort()) ? '#f43f5e' : '#64748b'}`,
+                                            borderBottom: `1px solid ${JSON.stringify(designerStrings.slice().sort()) === JSON.stringify([3, 2, 1].sort()) ? '#f43f5e' : '#64748b'}`,
+                                            flex: 1, height: '100%', borderBottomLeftRadius: '4px'
+                                        }}></div>
+                                        <span style={{
+                                            fontSize: '0.6rem', padding: '0 4px', lineHeight: '1', transform: 'translateY(50%)', fontWeight: '800',
+                                            color: JSON.stringify(designerStrings.slice().sort()) === JSON.stringify([3, 2, 1].sort()) ? '#f43f5e' : '#64748b'
+                                        }}>SET 3</span>
+                                        <div style={{
+                                            borderRight: `1px solid ${JSON.stringify(designerStrings.slice().sort()) === JSON.stringify([3, 2, 1].sort()) ? '#f43f5e' : '#64748b'}`,
+                                            borderBottom: `1px solid ${JSON.stringify(designerStrings.slice().sort()) === JSON.stringify([3, 2, 1].sort()) ? '#f43f5e' : '#64748b'}`,
+                                            flex: 1, height: '100%', borderBottomRightRadius: '4px'
+                                        }}></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
