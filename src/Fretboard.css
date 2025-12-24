@@ -315,3 +315,34 @@
     font-weight: 600;
     user-select: none;
 }
+@keyframes flyToTarget {
+    0% {
+        transform: translate(0, 0) scale(0.5);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1.5);
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        transform: translate(var(--target-x), var(--target-y)) scale(0.5);
+        opacity: 0;
+    }
+}
+
+@keyframes fallDown {
+    0% {
+        transform: translate(0, 0) rotate(0deg);
+        opacity: 1;
+    }
+    20% {
+        opacity: 1;
+    }
+    100% {
+        transform: translate(var(--drift-x), 300px) rotate(180deg);
+        opacity: 0;
+    }
+}
