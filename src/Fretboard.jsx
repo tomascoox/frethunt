@@ -142,6 +142,11 @@ export default function Fretboard() {
     const [memoryAllowedStrings, setMemoryAllowedStrings] = useState([0, 1, 2, 3, 4, 5]); // Default all
     const [questionsLeft, setQuestionsLeft] = useState(10); // 10 Questions per round
 
+    // CHORD DESIGNER STATE
+    const [designerRoot, setDesignerRoot] = useState('C');
+    const [designerType, setDesignerType] = useState('major'); // 'major' | 'minor'
+    const [designerStrings, setDesignerStrings] = useState([0, 1, 2, 3, 4, 5]); // All strings active initially
+
     // PROGRESSION & SETTINGS
     const [proMode, setProMode] = useState(() => localStorage.getItem('fretboardProMode') === 'true');
     const [showSettings, setShowSettings] = useState(false);
@@ -1172,52 +1177,162 @@ export default function Fretboard() {
             </div>
 
             {/* GAME SELECTION MENU */}
-            <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginBottom: '30px' }}>
-                <button
-                    className="btn"
-                    style={{
-                        backgroundColor: activeGameMode === 'string-walker' ? '#2dd4bf' : '#1e293b',
-                        color: activeGameMode === 'string-walker' ? '#0f172a' : '#94a3b8',
-                        borderColor: activeGameMode === 'string-walker' ? '#2dd4bf' : '#334155',
-                        fontSize: '1.2rem',
-                        padding: '12px 24px',
-                        letterSpacing: '1px'
-                    }}
-                    onClick={() => switchGameMode('string-walker')}
-                >
-                    STRING-WALKER
-                </button>
+            {/* MAIN NAVIGATION */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '30px', alignItems: 'center' }}>
 
-                <button
-                    className="btn"
-                    style={{
-                        backgroundColor: activeGameMode === 'triad-hunt' ? '#8b5cf6' : '#1e293b', // Violet theme for Triads
-                        color: activeGameMode === 'triad-hunt' ? '#0f172a' : '#94a3b8',
-                        borderColor: activeGameMode === 'triad-hunt' ? '#8b5cf6' : '#334155',
-                        fontSize: '1.2rem',
-                        padding: '12px 24px',
-                        letterSpacing: '1px'
-                    }}
-                    onClick={() => switchGameMode('triad-hunt')}
-                >
-                    TRIAD-HUNT
-                </button>
+                {/* TOOLS ROW */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 'bold', letterSpacing: '1px', width: '60px', textAlign: 'right' }}>TOOLS:</div>
+                    <button
+                        className="btn"
+                        style={{
+                            backgroundColor: activeGameMode === 'chord-designer' ? '#f43f5e' : '#1e293b', // Rose / Red theme
+                            color: activeGameMode === 'chord-designer' ? '#fff' : '#94a3b8',
+                            borderColor: activeGameMode === 'chord-designer' ? '#f43f5e' : '#334155',
+                            fontSize: '1rem', padding: '10px 20px', letterSpacing: '1px'
+                        }}
+                        onClick={() => switchGameMode('chord-designer')}
+                    >
+                        CHORD-DESIGNER
+                    </button>
+                </div>
 
-                <button
-                    className="btn"
-                    style={{
-                        backgroundColor: activeGameMode === 'memory' ? '#3b82f6' : '#1e293b',
-                        color: activeGameMode === 'memory' ? '#0f172a' : '#94a3b8',
-                        borderColor: activeGameMode === 'memory' ? '#3b82f6' : '#334155',
-                        fontSize: '1.2rem',
-                        padding: '12px 24px',
-                        letterSpacing: '1px'
-                    }}
-                    onClick={() => switchGameMode('memory')}
-                >
-                    NOTE-HUNT
-                </button>
+                {/* GAMES ROW */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 'bold', letterSpacing: '1px', width: '60px', textAlign: 'right' }}>GAMES:</div>
+                    <button
+                        className="btn"
+                        style={{
+                            backgroundColor: activeGameMode === 'string-walker' ? '#2dd4bf' : '#1e293b',
+                            color: activeGameMode === 'string-walker' ? '#0f172a' : '#94a3b8',
+                            borderColor: activeGameMode === 'string-walker' ? '#2dd4bf' : '#334155',
+                            fontSize: '1rem', padding: '10px 20px', letterSpacing: '1px'
+                        }}
+                        onClick={() => switchGameMode('string-walker')}
+                    >
+                        STRING-WALKER
+                    </button>
+
+                    <button
+                        className="btn"
+                        style={{
+                            backgroundColor: activeGameMode === 'triad-hunt' ? '#8b5cf6' : '#1e293b',
+                            color: activeGameMode === 'triad-hunt' ? '#0f172a' : '#94a3b8',
+                            borderColor: activeGameMode === 'triad-hunt' ? '#8b5cf6' : '#334155',
+                            fontSize: '1rem', padding: '10px 20px', letterSpacing: '1px'
+                        }}
+                        onClick={() => switchGameMode('triad-hunt')}
+                    >
+                        TRIAD-HUNT
+                    </button>
+
+                    <button
+                        className="btn"
+                        style={{
+                            backgroundColor: activeGameMode === 'memory' ? '#3b82f6' : '#1e293b',
+                            color: activeGameMode === 'memory' ? '#0f172a' : '#94a3b8',
+                            borderColor: activeGameMode === 'memory' ? '#3b82f6' : '#334155',
+                            fontSize: '1rem', padding: '10px 20px', letterSpacing: '1px'
+                        }}
+                        onClick={() => switchGameMode('memory')}
+                    >
+                        NOTE-HUNT
+                    </button>
+                </div>
             </div>
+
+            {/* CHORD DESIGNER HUD */}
+            {activeGameMode === 'chord-designer' && (
+                <div className="game-hud" style={{ flexDirection: 'column', gap: '15px', marginBottom: '50px', background: 'rgba(30, 41, 59, 0.5)', padding: '20px', borderRadius: '12px', border: '1px solid #f43f5e' }}>
+
+                    {/* ROW 1: ROOT (CIRCLE OF FIFTHS) */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                        <label style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600, textAlign: 'center' }}>ROOT NOTE</label>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '5px' }}>
+                            {['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'A#', 'F'].map(note => (
+                                <button
+                                    key={note}
+                                    className="btn"
+                                    onClick={() => setDesignerRoot(note)}
+                                    style={{
+                                        backgroundColor: designerRoot === note ? '#f43f5e' : 'transparent',
+                                        color: designerRoot === note ? '#fff' : '#94a3b8',
+                                        borderColor: designerRoot === note ? '#f43f5e' : '#475569',
+                                        fontSize: '0.9rem', padding: '6px 10px', minWidth: '36px',
+                                        boxShadow: designerRoot === note ? '0 0 10px rgba(244, 63, 94, 0.4)' : 'none'
+                                    }}
+                                >
+                                    {note}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '40px', flexWrap: 'wrap', marginTop: '10px' }}>
+
+                        {/* ROW 2: TYPE */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'center' }}>
+                            <label style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>QUALITY</label>
+                            <div style={{ display: 'flex', gap: '5px' }}>
+                                <button
+                                    className="btn"
+                                    onClick={() => setDesignerType('major')}
+                                    style={{
+                                        backgroundColor: designerType === 'major' ? '#f43f5e' : '#1e293b',
+                                        color: designerType === 'major' ? '#fff' : '#94a3b8',
+                                        borderColor: '#f43f5e',
+                                        opacity: designerType === 'major' ? 1 : 0.5
+                                    }}
+                                >
+                                    MAJOR
+                                </button>
+                                <button
+                                    className="btn"
+                                    onClick={() => setDesignerType('minor')}
+                                    style={{
+                                        backgroundColor: designerType === 'minor' ? '#f43f5e' : '#1e293b',
+                                        color: designerType === 'minor' ? '#fff' : '#94a3b8',
+                                        borderColor: '#f43f5e',
+                                        opacity: designerType === 'minor' ? 1 : 0.5
+                                    }}
+                                >
+                                    MINOR
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* ROW 3: STRINGS */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'center' }}>
+                            <label style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>ACTIVE STRINGS</label>
+                            <div style={{ display: 'flex', gap: '5px' }}>
+                                {/* Reverse order: High E (1) to Low E (6) */}
+                                {[5, 4, 3, 2, 1, 0].map((stringIndex) => (
+                                    <button
+                                        key={stringIndex}
+                                        className="btn"
+                                        onClick={() => {
+                                            setDesignerStrings(prev =>
+                                                prev.includes(stringIndex) ? prev.filter(s => s !== stringIndex) : [...prev, stringIndex]
+                                            );
+                                        }}
+                                        style={{
+                                            backgroundColor: designerStrings.includes(stringIndex) ? '#f43f5e' : '#1e293b',
+                                            color: designerStrings.includes(stringIndex) ? '#fff' : '#94a3b8',
+                                            borderColor: designerStrings.includes(stringIndex) ? '#f43f5e' : '#475569',
+                                            width: '36px', padding: '6px 0',
+                                            opacity: designerStrings.includes(stringIndex) ? 1 : 0.5
+                                        }}
+                                    >
+                                        {/* Label 1 (High E) to 6 (Low E) */}
+                                        {6 - stringIndex}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            )}
 
             {/* STRING WALKER GAME HUD */}
             {activeGameMode === 'string-walker' && (
@@ -1954,12 +2069,195 @@ export default function Fretboard() {
                             // MEMORY TARGET CHECK
                             const isMemoryTarget = memoryGameActive && memoryTarget && memoryTarget.s === stringIndex && memoryTarget.f === fretIndex;
 
-                            // MENU PREVIEW (Show selected notes in settings)
+                            // MENU PREVIEW
                             const isMenuPreview = activeGameMode === 'memory' && !memoryGameActive &&
                                 memoryAllowedStrings.includes(stringIndex) &&
                                 memoryAllowedNotes.includes(note);
 
-                            const isVisible = revealedState || isMenuPreview;
+                            // CHORD DESIGNER LOGIC
+                            let isDesignerNote = false;
+                            let designerColor = null; // Default
+                            let designerLabel = null; // R, 3, 5
+
+                            if (activeGameMode === 'chord-designer' && designerStrings.includes(stringIndex)) {
+                                const rootIdx = NOTES.indexOf(designerRoot);
+                                const thirdInterval = designerType === 'major' ? 4 : 3;
+                                const fifthInterval = 7;
+
+                                const targetNotes = [
+                                    NOTES[rootIdx],
+                                    NOTES[(rootIdx + thirdInterval) % 12],
+                                    NOTES[(rootIdx + fifthInterval) % 12]
+                                ];
+
+                                if (targetNotes.includes(note)) {
+                                    // ZONE DOMINANCE HUNTER
+                                    // 1. Find GlobalBest in +/- 4 window.
+                                    // 2. If GlobalBest is a "Perfect Shape" (uses all active strings) and I am "Partial" -> I hide.
+                                    // 3. Otherwise, use Overlap logic (if we share notes and Global is better -> I hide).
+
+                                    const sortedStrings = [...designerStrings].sort((a, b) => a - b);
+
+                                    // Helper: Gather candidates
+                                    const gatherCandidates = (centerFret) => {
+                                        const candsPerStr = [];
+                                        const minF = Math.max(0, centerFret - 6);
+                                        const maxF = Math.min(FRET_COUNT, centerFret + 6);
+
+                                        for (let s of sortedStrings) {
+                                            const cands = [];
+                                            for (let f = minF; f <= maxF; f++) {
+                                                const n = getNoteAt(s, f);
+                                                if (targetNotes.includes(n)) {
+                                                    cands.push({ s, f, note: n });
+                                                }
+                                            }
+                                            candsPerStr.push({ s, cands });
+                                        }
+                                        return candsPerStr;
+                                    };
+
+                                    // Helper: Find Best Shape
+                                    const findBestShape = (candsPerStr, forcedNote = null) => {
+                                        const validShapes = [];
+
+                                        const search = (depth, currentShape) => {
+                                            if (depth === candsPerStr.length) {
+                                                if (currentShape.length === 0) return;
+
+                                                if (forcedNote) {
+                                                    const hasMe = currentShape.some(d => d.s === forcedNote.s && d.f === forcedNote.f);
+                                                    if (!hasMe) return;
+                                                }
+
+                                                const uniqueNotes = new Set(currentShape.map(d => d.note));
+                                                if (!targetNotes.every(t => uniqueNotes.has(t))) return;
+
+                                                const frets = currentShape.map(d => d.f);
+                                                const span = Math.max(...frets) - Math.min(...frets);
+                                                if (span > 3) return;
+
+                                                validShapes.push({
+                                                    shape: currentShape,
+                                                    count: currentShape.length,
+                                                    span: span,
+                                                    bassString: Math.min(...currentShape.map(d => d.s)),
+                                                    bassFret: Math.min(...currentShape.map(d => d.f))
+                                                });
+                                                return;
+                                            }
+
+                                            const { cands } = candsPerStr[depth];
+                                            for (let cand of cands) {
+                                                if (currentShape.length > 0) {
+                                                    const currentFrets = [...currentShape.map(d => d.f), cand.f];
+                                                    if ((Math.max(...currentFrets) - Math.min(...currentFrets)) > 3) continue;
+                                                }
+                                                search(depth + 1, [...currentShape, cand]);
+                                            }
+                                            search(depth + 1, currentShape);
+                                        };
+
+                                        search(0, []);
+
+                                        if (validShapes.length === 0) return null;
+
+                                        validShapes.sort((a, b) => {
+                                            if (b.count !== a.count) return b.count - a.count;
+                                            if (a.span !== b.span) return a.span - b.span;
+                                            if (a.bassString !== b.bassString) return a.bassString - b.bassString;
+                                            return a.bassFret - b.bassFret;
+                                        });
+
+                                        return validShapes[0];
+                                    };
+
+                                    // 1. Gather Context
+                                    const neighbors = gatherCandidates(fretIndex);
+
+                                    // 2. Find MY Best Shape
+                                    const myBestEntry = findBestShape(neighbors, { s: stringIndex, f: fretIndex });
+
+                                    if (myBestEntry) {
+                                        // 3. Find GLOBAL Best Shape
+                                        const globalBestEntry = findBestShape(neighbors, null);
+
+                                        let iAmValid = true;
+
+                                        if (globalBestEntry) {
+                                            const activeStringCount = designerStrings.length;
+                                            const globalIsPerfect = globalBestEntry.count === activeStringCount;
+                                            const myIsPartial = myBestEntry.count < activeStringCount;
+
+                                            // ZONE DOMINANCE REPLACED BY STRICT OVERLAP:
+                                            if (false) {
+                                                // Legacy block removed
+                                            }
+                                            // Standard Dominance Logic:
+                                            {
+                                                // Standard Overlap/Quality Check
+                                                const globalBetter = (globalBestEntry.count > myBestEntry.count) ||
+                                                    (globalBestEntry.count === myBestEntry.count && globalBestEntry.span < myBestEntry.span) ||
+                                                    (globalBestEntry.count === myBestEntry.count && globalBestEntry.span === myBestEntry.span && globalBestEntry.bassString < myBestEntry.bassString);
+
+                                                if (globalBetter) {
+                                                    const shareNotes = myBestEntry.shape.some(myD =>
+                                                        globalBestEntry.shape.some(gD => gD.s === myD.s && gD.f === myD.f)
+                                                    );
+                                                    if (shareNotes) {
+                                                        iAmValid = false;
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        if (iAmValid) {
+                                            isDesignerNote = true;
+                                            let shapeBassInterval = '1';
+                                            const finalShape = myBestEntry.shape;
+
+                                            // Label
+                                            if (note === targetNotes[0]) designerLabel = '1';
+                                            else if (note === targetNotes[1]) designerLabel = designerType === 'major' ? '3' : 'b3';
+                                            else designerLabel = '5';
+
+                                            // Bass Logic
+                                            let lowestString = 999;
+                                            let lowestFret = 999;
+                                            let bestBassCandidate = null;
+
+                                            finalShape.forEach(d => {
+                                                // Helper: Check if d.s is "Lower" (Thicker) -> Since 0=Low, Min is Thicker.
+                                                if (d.s < lowestString) {
+                                                    lowestString = d.s;
+                                                    lowestFret = d.f;
+                                                    bestBassCandidate = d.note;
+                                                } else if (d.s === lowestString) {
+                                                    if (d.f < lowestFret) {
+                                                        lowestFret = d.f;
+                                                        bestBassCandidate = d.note;
+                                                    }
+                                                }
+                                            });
+
+                                            if (bestBassCandidate) {
+                                                if (bestBassCandidate === targetNotes[0]) shapeBassInterval = '1';
+                                                else if (bestBassCandidate === targetNotes[1]) shapeBassInterval = '3';
+                                                else shapeBassInterval = '5';
+                                            }
+
+                                            const shapeColors = {
+                                                '1': '#f43f5e',
+                                                '3': '#3b82f6',
+                                                '5': '#eab308'
+                                            };
+                                            designerColor = shapeColors[shapeBassInterval];
+                                        }
+                                    }
+                                }
+                            }
+
+                            const isVisible = revealedState || isMenuPreview || isDesignerNote;
 
                             return (
                                 <React.Fragment key={key}>
@@ -1987,14 +2285,23 @@ export default function Fretboard() {
                                     >
                                         <div
                                             className={`note-circle ${isVisible ? 'revealed' : ''} ${feedbackState || ''} ${isMemoryTarget ? 'memory-target' : ''}`}
-                                            style={isMenuPreview && !revealedState ? {
-                                                backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                                                borderColor: 'rgba(96, 165, 250, 0.4)',
-                                                color: 'rgba(255, 255, 255, 0.7)',
-                                                boxShadow: 'none'
-                                            } : {}}
+                                            style={
+                                                isDesignerNote ? {
+                                                    backgroundColor: designerColor,
+                                                    borderColor: designerColor,
+                                                    color: '#0f172a', // Dark text on bright colors
+                                                    boxShadow: `0 0 10px ${designerColor}`,
+                                                    opacity: 1
+                                                } :
+                                                    (isMenuPreview && !revealedState ? {
+                                                        backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                                                        borderColor: 'rgba(96, 165, 250, 0.4)',
+                                                        color: 'rgba(255, 255, 255, 0.7)',
+                                                        boxShadow: 'none'
+                                                    } : {})
+                                            }
                                         >
-                                            {isMemoryTarget ? '?' : note}
+                                            {isMemoryTarget ? '?' : (isDesignerNote ? designerLabel : note)}
                                         </div>
                                     </div>
 
