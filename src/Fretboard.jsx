@@ -147,6 +147,21 @@ export default function Fretboard() {
     const [showSettings, setShowSettings] = useState(false);
     useEffect(() => { localStorage.setItem('fretboardProMode', proMode); }, [proMode]);
 
+    // REF FOR DRAG-TO-PLAY INTERACTION
+    const isPointerDown = useRef(false);
+
+    // GLOBAL POINTER UP (RESET DRAG)
+    useEffect(() => {
+        const handleUp = () => isPointerDown.current = false;
+        // Also handle cancel/leave to be safe
+        window.addEventListener('pointerup', handleUp);
+        window.addEventListener('pointercancel', handleUp);
+        return () => {
+            window.removeEventListener('pointerup', handleUp);
+            window.removeEventListener('pointercancel', handleUp);
+        };
+    }, []);
+
     // ENFORCE LOCKS (Anti-Ghost Selection)
     useEffect(() => {
         if (proMode) return; // Free for all
@@ -999,6 +1014,20 @@ export default function Fretboard() {
                 });
             }, 300);
             setScore(s => Math.max(0, s - 50));
+        }
+    };
+
+    const handleNoteInteraction = (stringIndex, fretIndex, note) => {
+        if (activeGameMode === 'memory') {
+            if (!memoryGameActive) return; // Wait for start
+            setMemoryTarget({ s: stringIndex, f: fretIndex, note });
+        } else if (activeGameMode === 'triad-hunt') {
+            checkTriadClick(stringIndex, fretIndex);
+        } else if (practiceActive) {
+            handlePracticeClick(stringIndex, fretIndex);
+        } else {
+            // Explorer Mode
+            toggleNote(stringIndex, fretIndex);
         }
     };
 
@@ -2483,22 +2512,21 @@ export default function Fretboard() {
                                                             gridColumn: fretIndex + 1,
                                                             gridRow: visualRow,
                                                             // Pointer Events Logic:
-                                                            // If Memory Game is Active -> Only allow clicks if it's a valid target string
-                                                            pointerEvents: (memoryGameActive && !memoryAllowedStrings.includes(stringIndex)) ? 'none' : 'auto'
+                                                            pointerEvents: (memoryGameActive && !memoryAllowedStrings.includes(stringIndex)) ? 'none' : 'auto',
+                                                            touchAction: 'none' // Critical for Drag-To-Play on mobile
                                                         }}
-                                                        onClick={() => {
-                                                            if (activeGameMode === 'memory') {
-                                                                if (!memoryGameActive) return; // Wait for start
-                                                                // In memory game, clicking the cell triggers the menu (handled by state)
-                                                                // But we need to define target.
-                                                                setMemoryTarget({ s: stringIndex, f: fretIndex, note });
-                                                            } else if (activeGameMode === 'triad-hunt') {
-                                                                checkTriadClick(stringIndex, fretIndex);
-                                                            } else if (practiceActive) {
-                                                                handlePracticeClick(stringIndex, fretIndex);
-                                                            } else {
-                                                                // Explorer Mode
-                                                                toggleNote(stringIndex, fretIndex);
+                                                        onPointerDown={(e) => {
+                                                            e.preventDefault(); // Prevent text selection/scrolling
+                                                            // Capture pointer to ensure tracking even if moving fast
+                                                            // e.target.setPointerCapture(e.pointerId); 
+                                                            // Actually, for "gliding" across notes, we do NOT want capture. We want to enter other nodes.
+
+                                                            isPointerDown.current = true;
+                                                            handleNoteInteraction(stringIndex, fretIndex, note);
+                                                        }}
+                                                        onPointerEnter={(e) => {
+                                                            if (isPointerDown.current) {
+                                                                handleNoteInteraction(stringIndex, fretIndex, note);
                                                             }
                                                         }}
                                                     >
