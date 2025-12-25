@@ -1249,7 +1249,7 @@ export default function Fretboard() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                         <label style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600, textAlign: 'center' }}>ROOT NOTE</label>
                         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '5px' }}>
-                            {['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'A#', 'F'].map(note => (
+                            {['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'].map(note => (
                                 <button
                                     key={note}
                                     className="btn"
@@ -2080,440 +2080,478 @@ export default function Fretboard() {
                 </div>
             )}
 
-            <div className="fretboard-scroll-container">
-                <div className="fretboard">
-                    {/* Inlays (Background) */}
-                    {renderInlays()}
+            <div className="fretboard-scroll-container" style={{ display: 'flex', justifyContent: 'center' }}>
 
-                    {/* Nut Line */}
-                    <div className="nut-line" style={{ left: '50px', zIndex: 5 }}></div>
-
-                    {/* Fret Lines */}
-                    {Array.from({ length: FRET_COUNT }).map((_, i) => (
-                        <div
-                            key={`fret-line-${i + 1}`}
-                            className="fret-line"
-                            style={{
-                                gridColumn: i + 2, // Fret 1 is Col 2
-                                gridRow: '1 / -1',
-                                position: 'relative',
-                                justifySelf: 'end',
-                                right: '-1px'
-                            }}
-                        />
-                    ))}
-
-                    {/* Strings Visuals */}
-                    {/* Strings Visuals */}
-                    {TUNING.map((_, sIndex) => {
-                        // VISUAL INVERSION: Low E (0) should be at Bottom (Row 6)
-                        const visualRow = 6 - sIndex;
-                        const isActive = practiceActive && currentStringIndex === sIndex;
-                        const isWound = sIndex <= 2; // Low E, A, D are wound (indices 0, 1, 2)
-
-                        // Thickness: Low E (0) should be thickest. High E (5) thinnest.
-                        const thickness = 1 + (5 - sIndex) * 0.6;
-
-                        return (
+                {/* LEFT GUTTER: String Numbers */}
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    marginTop: '1px', // Fine-tune alignment with board border
+                    marginRight: '12px',
+                    height: `${6 * 34}px` // 6 strings * 34px row height
+                }}>
+                    {/* Loop 1 to 6 (Top to Bottom) directly since Flex is Column */
+                        [1, 2, 3, 4, 5, 6].map((num) => (
                             <div
-                                key={`string-line-${sIndex}`}
-                                className="string-line"
+                                key={`gutter-num-${num}`}
                                 style={{
-                                    gridColumn: '1 / -1',
-                                    gridRow: visualRow,
-                                    height: `${thickness}px`,
+                                    height: '34px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'flex-end',
+                                    color: '#64748b',
+                                    fontWeight: 'bold',
+                                    fontSize: '0.8rem',
+                                    fontFamily: "'Inter', sans-serif"
+                                }}
+                            >
+                                {num}
+                            </div>
+                        ))}
+                </div>
 
-                                    // Use texture for wound strings, unless active (Gold overrides)
-                                    // Or blend them? If active, we probably want pure Gold for visibility.
-                                    // Let's use Gold if active, else Texture (for wound) or Grey (for plain).
-                                    backgroundColor: isActive ? '#facc15' : (isWound ? 'transparent' : '#aa9992'), // Plain strings silvery
-                                    backgroundImage: (!isActive && isWound) ? 'url("/string-closeup.webp")' : 'none',
-                                    backgroundRepeat: 'repeat-x',
-                                    backgroundSize: 'auto 100%',
+                {/* RIGHT CONTENT: Board + Fret Numbers */}
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div className="fretboard">
+                        {/* Inlays (Background) */}
+                        {renderInlays()}
 
-                                    boxShadow: isActive ? '0 0 10px #facc15' : '0 1px 2px rgba(0,0,0,0.6)',
+                        {/* Nut Line */}
+                        <div className="nut-line" style={{ left: '50px', zIndex: 5 }}></div>
+
+                        {/* Fret Lines */}
+                        {Array.from({ length: FRET_COUNT }).map((_, i) => (
+                            <div
+                                key={`fret-line-${i + 1}`}
+                                className="fret-line"
+                                style={{
+                                    gridColumn: i + 2, // Fret 1 is Col 2
+                                    gridRow: '1 / -1',
                                     position: 'relative',
-                                    top: '50%',
-                                    transform: 'translateY(-50%)',
-                                    zIndex: 10,
-                                    transition: 'all 0.3s ease'
+                                    justifySelf: 'end',
+                                    right: '-1px'
                                 }}
                             />
-                        );
-                    })}
+                        ))}
 
-                    {/* Note Grid */}
-                    {TUNING.map((stringData, stringIndex) => {
-                        return Array.from({ length: FRET_COUNT + 1 }).map((_, fretIndex) => {
-                            const note = getNoteAt(stringIndex, fretIndex);
-                            const key = `${stringIndex}-${fretIndex}`;
-                            const revealedState = isRevealed(stringIndex, fretIndex);
-                            const feedbackState = getFeedback(stringIndex, fretIndex);
+                        {/* Strings Visuals */}
+                        {TUNING.map((_, sIndex) => {
+                            // VISUAL INVERSION: Low E (0) should be at Bottom (Row 6)
+                            const visualRow = 6 - sIndex;
+                            const isActive = practiceActive && currentStringIndex === sIndex;
+                            const isWound = sIndex <= 2; // Low E, A, D are wound (indices 0, 1, 2)
 
-                            // VISUAL INVERSION: Map stringIndex 0 to Row 6.
-                            const visualRow = 6 - stringIndex;
+                            // Thickness: Low E (0) should be thickest. High E (5) thinnest.
+                            const thickness = 1 + (5 - sIndex) * 0.6;
 
-                            // MEMORY TARGET CHECK
-                            const isMemoryTarget = memoryGameActive && memoryTarget && memoryTarget.s === stringIndex && memoryTarget.f === fretIndex;
+                            return (
+                                <div
+                                    key={`string-line-${sIndex}`}
+                                    className="string-line"
+                                    style={{
+                                        gridColumn: '1 / -1',
+                                        gridRow: visualRow,
+                                        height: `${thickness}px`,
 
-                            // MENU PREVIEW
-                            const isMenuPreview = activeGameMode === 'memory' && !memoryGameActive &&
-                                memoryAllowedStrings.includes(stringIndex) &&
-                                memoryAllowedNotes.includes(note);
+                                        // Use texture for wound strings, unless active (Gold overrides)
+                                        // Or blend them? If active, we probably want pure Gold for visibility.
+                                        // Let's use Gold if active, else Texture (for wound) or Grey (for plain).
+                                        backgroundColor: isActive ? '#facc15' : (isWound ? 'transparent' : '#aa9992'), // Plain strings silvery
+                                        backgroundImage: (!isActive && isWound) ? 'url("/string-closeup.webp")' : 'none',
+                                        backgroundRepeat: 'repeat-x',
+                                        backgroundSize: 'auto 100%',
 
-                            // CHORD DESIGNER LOGIC
-                            let isDesignerNote = false;
-                            let designerColor = null; // Default
-                            let designerLabel = null; // R, 3, 5
+                                        boxShadow: isActive ? '0 0 10px #facc15' : '0 1px 2px rgba(0,0,0,0.6)',
+                                        position: 'relative',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        zIndex: 10,
+                                        transition: 'all 0.3s ease'
+                                    }}
+                                />
+                            );
+                        })}
 
-                            if (activeGameMode === 'chord-designer' && designerStrings.includes(stringIndex)) {
-                                const rootIdx = NOTES.indexOf(designerRoot);
-                                const thirdInterval = designerType === 'major' ? 4 : 3;
-                                const fifthInterval = 7;
+                        {/* Note Grid */}
+                        {TUNING.map((stringData, stringIndex) => {
+                            return Array.from({ length: FRET_COUNT + 1 }).map((_, fretIndex) => {
+                                const note = getNoteAt(stringIndex, fretIndex);
+                                const key = `${stringIndex}-${fretIndex}`;
+                                const revealedState = isRevealed(stringIndex, fretIndex);
+                                const feedbackState = getFeedback(stringIndex, fretIndex);
 
-                                const targetNotes = [
-                                    NOTES[rootIdx],
-                                    NOTES[(rootIdx + thirdInterval) % 12],
-                                    NOTES[(rootIdx + fifthInterval) % 12]
-                                ];
+                                // VISUAL INVERSION: Map stringIndex 0 to Row 6.
+                                const visualRow = 6 - stringIndex;
 
-                                if (targetNotes.includes(note)) {
-                                    // ZONE DOMINANCE HUNTER
-                                    // 1. Find GlobalBest in +/- 4 window.
-                                    // 2. If GlobalBest is a "Perfect Shape" (uses all active strings) and I am "Partial" -> I hide.
-                                    // 3. Otherwise, use Overlap logic (if we share notes and Global is better -> I hide).
+                                // MEMORY TARGET CHECK
+                                const isMemoryTarget = memoryGameActive && memoryTarget && memoryTarget.s === stringIndex && memoryTarget.f === fretIndex;
 
-                                    const sortedStrings = [...designerStrings].sort((a, b) => a - b);
+                                // MENU PREVIEW
+                                const isMenuPreview = activeGameMode === 'memory' && !memoryGameActive &&
+                                    memoryAllowedStrings.includes(stringIndex) &&
+                                    memoryAllowedNotes.includes(note);
 
-                                    // Helper: Gather candidates
-                                    const gatherCandidates = (centerFret) => {
-                                        const candsPerStr = [];
-                                        const minF = Math.max(0, centerFret - 6);
-                                        const maxF = Math.min(FRET_COUNT, centerFret + 6);
+                                // CHORD DESIGNER LOGIC
+                                let isDesignerNote = false;
+                                let designerColor = null; // Default
+                                let designerLabel = null; // R, 3, 5
 
-                                        for (let s of sortedStrings) {
-                                            const cands = [];
-                                            for (let f = minF; f <= maxF; f++) {
-                                                const n = getNoteAt(s, f);
-                                                if (targetNotes.includes(n)) {
-                                                    cands.push({ s, f, note: n });
+                                if (activeGameMode === 'chord-designer' && designerStrings.includes(stringIndex)) {
+                                    const rootIdx = NOTES.indexOf(designerRoot);
+                                    const thirdInterval = designerType === 'major' ? 4 : 3;
+                                    const fifthInterval = 7;
+
+                                    const targetNotes = [
+                                        NOTES[rootIdx],
+                                        NOTES[(rootIdx + thirdInterval) % 12],
+                                        NOTES[(rootIdx + fifthInterval) % 12]
+                                    ];
+
+                                    if (targetNotes.includes(note)) {
+                                        // ZONE DOMINANCE HUNTER
+                                        // 1. Find GlobalBest in +/- 4 window.
+                                        // 2. If GlobalBest is a "Perfect Shape" (uses all active strings) and I am "Partial" -> I hide.
+                                        // 3. Otherwise, use Overlap logic (if we share notes and Global is better -> I hide).
+
+                                        const sortedStrings = [...designerStrings].sort((a, b) => a - b);
+
+                                        // Helper: Gather candidates
+                                        const gatherCandidates = (centerFret) => {
+                                            const candsPerStr = [];
+                                            const minF = Math.max(0, centerFret - 6);
+                                            const maxF = Math.min(FRET_COUNT, centerFret + 6);
+
+                                            for (let s of sortedStrings) {
+                                                const cands = [];
+                                                for (let f = minF; f <= maxF; f++) {
+                                                    const n = getNoteAt(s, f);
+                                                    if (targetNotes.includes(n)) {
+                                                        cands.push({ s, f, note: n });
+                                                    }
                                                 }
+                                                candsPerStr.push({ s, cands });
                                             }
-                                            candsPerStr.push({ s, cands });
-                                        }
-                                        return candsPerStr;
-                                    };
-
-                                    // Helper: Find Best Shape
-                                    const findBestShape = (candsPerStr, forcedNote = null) => {
-                                        const validShapes = [];
-
-                                        const search = (depth, currentShape) => {
-                                            if (depth === candsPerStr.length) {
-                                                if (currentShape.length === 0) return;
-
-                                                if (forcedNote) {
-                                                    const hasMe = currentShape.some(d => d.s === forcedNote.s && d.f === forcedNote.f);
-                                                    if (!hasMe) return;
-                                                }
-
-                                                const uniqueNotes = new Set(currentShape.map(d => d.note));
-                                                if (!targetNotes.every(t => uniqueNotes.has(t))) return;
-
-                                                const frets = currentShape.map(d => d.f);
-                                                const span = Math.max(...frets) - Math.min(...frets);
-                                                if (span > 3) return;
-
-                                                validShapes.push({
-                                                    shape: currentShape,
-                                                    count: currentShape.length,
-                                                    span: span,
-                                                    bassString: Math.min(...currentShape.map(d => d.s)),
-                                                    bassFret: Math.min(...currentShape.map(d => d.f))
-                                                });
-                                                return;
-                                            }
-
-                                            const { cands } = candsPerStr[depth];
-                                            for (let cand of cands) {
-                                                if (currentShape.length > 0) {
-                                                    const currentFrets = [...currentShape.map(d => d.f), cand.f];
-                                                    if ((Math.max(...currentFrets) - Math.min(...currentFrets)) > 3) continue;
-                                                }
-                                                search(depth + 1, [...currentShape, cand]);
-                                            }
-                                            search(depth + 1, currentShape);
+                                            return candsPerStr;
                                         };
 
-                                        search(0, []);
+                                        // Helper: Find Best Shape
+                                        const findBestShape = (candsPerStr, forcedNote = null) => {
+                                            const validShapes = [];
 
-                                        if (validShapes.length === 0) return null;
+                                            const search = (depth, currentShape) => {
+                                                if (depth === candsPerStr.length) {
+                                                    if (currentShape.length === 0) return;
 
-                                        validShapes.sort((a, b) => {
-                                            if (b.count !== a.count) return b.count - a.count;
-                                            if (a.span !== b.span) return a.span - b.span;
-                                            if (a.bassString !== b.bassString) return a.bassString - b.bassString;
-                                            return a.bassFret - b.bassFret;
-                                        });
-
-                                        return validShapes[0];
-                                    };
-
-                                    // 1. Gather Context
-                                    const neighbors = gatherCandidates(fretIndex);
-
-                                    // 2. Find MY Best Shape
-                                    const myBestEntry = findBestShape(neighbors, { s: stringIndex, f: fretIndex });
-
-                                    if (myBestEntry) {
-                                        // 3. Find GLOBAL Best Shape
-                                        const globalBestEntry = findBestShape(neighbors, null);
-
-                                        let iAmValid = true;
-
-                                        if (globalBestEntry) {
-                                            const activeStringCount = designerStrings.length;
-                                            const globalIsPerfect = globalBestEntry.count === activeStringCount;
-                                            const myIsPartial = myBestEntry.count < activeStringCount;
-
-                                            // ZONE DOMINANCE REPLACED BY STRICT OVERLAP:
-                                            if (false) {
-                                                // Legacy block removed
-                                            }
-                                            // Standard Dominance Logic:
-                                            {
-                                                // Standard Overlap/Quality Check
-                                                const globalBetter = (globalBestEntry.count > myBestEntry.count) ||
-                                                    (globalBestEntry.count === myBestEntry.count && globalBestEntry.span < myBestEntry.span) ||
-                                                    (globalBestEntry.count === myBestEntry.count && globalBestEntry.span === myBestEntry.span && globalBestEntry.bassString < myBestEntry.bassString);
-
-                                                if (globalBetter) {
-                                                    const shareNotes = myBestEntry.shape.some(myD =>
-                                                        globalBestEntry.shape.some(gD => gD.s === myD.s && gD.f === myD.f)
-                                                    );
-                                                    if (shareNotes) {
-                                                        iAmValid = false;
+                                                    if (forcedNote) {
+                                                        const hasMe = currentShape.some(d => d.s === forcedNote.s && d.f === forcedNote.f);
+                                                        if (!hasMe) return;
                                                     }
+
+                                                    const uniqueNotes = new Set(currentShape.map(d => d.note));
+                                                    if (!targetNotes.every(t => uniqueNotes.has(t))) return;
+
+                                                    const frets = currentShape.map(d => d.f);
+                                                    const span = Math.max(...frets) - Math.min(...frets);
+                                                    if (span > 3) return;
+
+                                                    validShapes.push({
+                                                        shape: currentShape,
+                                                        count: currentShape.length,
+                                                        span: span,
+                                                        bassString: Math.min(...currentShape.map(d => d.s)),
+                                                        bassFret: Math.min(...currentShape.map(d => d.f))
+                                                    });
+                                                    return;
                                                 }
-                                            }
-                                        }
 
-                                        if (iAmValid) {
-                                            isDesignerNote = true;
-                                            let shapeBassInterval = '1';
-                                            const finalShape = myBestEntry.shape;
-
-                                            // Label
-                                            if (note === targetNotes[0]) designerLabel = '1';
-                                            else if (note === targetNotes[1]) designerLabel = designerType === 'major' ? '3' : 'b3';
-                                            else designerLabel = '5';
-
-                                            // Bass Logic
-                                            let lowestString = 999;
-                                            let lowestFret = 999;
-                                            let bestBassCandidate = null;
-
-                                            finalShape.forEach(d => {
-                                                // Helper: Check if d.s is "Lower" (Thicker) -> Since 0=Low, Min is Thicker.
-                                                if (d.s < lowestString) {
-                                                    lowestString = d.s;
-                                                    lowestFret = d.f;
-                                                    bestBassCandidate = d.note;
-                                                } else if (d.s === lowestString) {
-                                                    if (d.f < lowestFret) {
-                                                        lowestFret = d.f;
-                                                        bestBassCandidate = d.note;
+                                                const { cands } = candsPerStr[depth];
+                                                for (let cand of cands) {
+                                                    if (currentShape.length > 0) {
+                                                        const currentFrets = [...currentShape.map(d => d.f), cand.f];
+                                                        if ((Math.max(...currentFrets) - Math.min(...currentFrets)) > 3) continue;
                                                     }
+                                                    search(depth + 1, [...currentShape, cand]);
                                                 }
-                                            });
-
-                                            if (bestBassCandidate) {
-                                                if (bestBassCandidate === targetNotes[0]) shapeBassInterval = '1';
-                                                else if (bestBassCandidate === targetNotes[1]) shapeBassInterval = '3';
-                                                else shapeBassInterval = '5';
-                                            }
-
-                                            // SHAPE FINGERPRINTING & COLORING
-                                            // 1. Sort by string index (Thick -> Thin)
-                                            const sortedShape = finalShape.slice().sort((a, b) => a.s - b.s);
-                                            // 2. Normalize frets relative to the lowest fret in the shape
-                                            const minF = Math.min(...sortedShape.map(d => d.f));
-                                            const fingerprint = sortedShape.map(d => d.f - minF).join('');
-
-                                            // 3. STRICT COLOR MAPPING (The "Fingerprint")
-                                            // Assigns a specific color to each unique visual shape (finger placement pattern).
-                                            const SHAPE_COLOR_MAP = {
-                                                // --- 2nd Inversion Shapes ---
-                                                '010': '#f59e0b', // Set 1 (Triangle) -> Yellow (Reserved)
-                                                '000': '#8b5cf6', // Set 2 (Bar) -> Purple
-                                                '110': '#10b981', // Set 3/4 -> Emerald
-
-                                                // --- 1st Inversion Shapes ---
-                                                '100': '#3b82f6', // Set 1 -> Blue
-                                                '201': '#84cc16', // Set 2 -> Lime (Distinct from Blue)
-                                                '200': '#d946ef', // Set 3/4 -> Fuchsia (Distinct from Blue/Lime)
-
-                                                // --- Root Position Shapes ---
-                                                '220': '#f43f5e', // Set 1 -> Red
-                                                '210': '#f97316', // Set 2 -> Orange
-                                                '320': '#ec4899', // Set 3/4 -> Pink
+                                                search(depth + 1, currentShape);
                                             };
 
-                                            if (SHAPE_COLOR_MAP[fingerprint]) {
-                                                designerColor = SHAPE_COLOR_MAP[fingerprint];
-                                            } else {
-                                                // Fallback for unknown shapes (should rarely be hit for closed triads)
-                                                designerColor = '#94a3b8';
+                                            search(0, []);
+
+                                            if (validShapes.length === 0) return null;
+
+                                            validShapes.sort((a, b) => {
+                                                if (b.count !== a.count) return b.count - a.count;
+                                                if (a.span !== b.span) return a.span - b.span;
+                                                if (a.bassString !== b.bassString) return a.bassString - b.bassString;
+                                                return a.bassFret - b.bassFret;
+                                            });
+
+                                            return validShapes[0];
+                                        };
+
+                                        // 1. Gather Context
+                                        const neighbors = gatherCandidates(fretIndex);
+
+                                        // 2. Find MY Best Shape
+                                        const myBestEntry = findBestShape(neighbors, { s: stringIndex, f: fretIndex });
+
+                                        if (myBestEntry) {
+                                            // 3. Find GLOBAL Best Shape
+                                            const globalBestEntry = findBestShape(neighbors, null);
+
+                                            let iAmValid = true;
+
+                                            if (globalBestEntry) {
+                                                const activeStringCount = designerStrings.length;
+                                                const globalIsPerfect = globalBestEntry.count === activeStringCount;
+                                                const myIsPartial = myBestEntry.count < activeStringCount;
+
+                                                // ZONE DOMINANCE REPLACED BY STRICT OVERLAP:
+                                                if (false) {
+                                                    // Legacy block removed
+                                                }
+                                                // Standard Dominance Logic:
+                                                {
+                                                    // Standard Overlap/Quality Check
+                                                    const globalBetter = (globalBestEntry.count > myBestEntry.count) ||
+                                                        (globalBestEntry.count === myBestEntry.count && globalBestEntry.span < myBestEntry.span) ||
+                                                        (globalBestEntry.count === myBestEntry.count && globalBestEntry.span === myBestEntry.span && globalBestEntry.bassString < myBestEntry.bassString);
+
+                                                    if (globalBetter) {
+                                                        const shareNotes = myBestEntry.shape.some(myD =>
+                                                            globalBestEntry.shape.some(gD => gD.s === myD.s && gD.f === myD.f)
+                                                        );
+                                                        if (shareNotes) {
+                                                            iAmValid = false;
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            if (iAmValid) {
+                                                isDesignerNote = true;
+                                                let shapeBassInterval = '1';
+                                                const finalShape = myBestEntry.shape;
+
+                                                // Label
+                                                if (note === targetNotes[0]) designerLabel = '1';
+                                                else if (note === targetNotes[1]) designerLabel = designerType === 'major' ? '3' : 'b3';
+                                                else designerLabel = '5';
+
+                                                // Bass Logic
+                                                let lowestString = 999;
+                                                let lowestFret = 999;
+                                                let bestBassCandidate = null;
+
+                                                finalShape.forEach(d => {
+                                                    // Helper: Check if d.s is "Lower" (Thicker) -> Since 0=Low, Min is Thicker.
+                                                    if (d.s < lowestString) {
+                                                        lowestString = d.s;
+                                                        lowestFret = d.f;
+                                                        bestBassCandidate = d.note;
+                                                    } else if (d.s === lowestString) {
+                                                        if (d.f < lowestFret) {
+                                                            lowestFret = d.f;
+                                                            bestBassCandidate = d.note;
+                                                        }
+                                                    }
+                                                });
+
+                                                if (bestBassCandidate) {
+                                                    if (bestBassCandidate === targetNotes[0]) shapeBassInterval = '1';
+                                                    else if (bestBassCandidate === targetNotes[1]) shapeBassInterval = '3';
+                                                    else shapeBassInterval = '5';
+                                                }
+
+                                                // SHAPE FINGERPRINTING & COLORING
+                                                // 1. Sort by string index (Thick -> Thin)
+                                                const sortedShape = finalShape.slice().sort((a, b) => a.s - b.s);
+                                                // 2. Normalize frets relative to the lowest fret in the shape
+                                                const minF = Math.min(...sortedShape.map(d => d.f));
+                                                const fingerprint = sortedShape.map(d => d.f - minF).join('');
+
+                                                // 3. STRICT COLOR MAPPING (The "Fingerprint")
+                                                // Assigns a specific color to each unique visual shape (finger placement pattern).
+                                                const SHAPE_COLOR_MAP = {
+                                                    // --- 2nd Inversion Shapes ---
+                                                    '010': '#f59e0b', // Set 1 (Triangle) -> Yellow (Reserved)
+                                                    '000': '#8b5cf6', // Set 2 (Bar) -> Purple
+                                                    '110': '#10b981', // Set 3/4 -> Emerald
+
+                                                    // --- 1st Inversion Shapes ---
+                                                    '100': '#3b82f6', // Set 1 -> Blue
+                                                    '201': '#84cc16', // Set 2 -> Lime (Distinct from Blue)
+                                                    '200': '#d946ef', // Set 3/4 -> Fuchsia (Distinct from Blue/Lime)
+
+                                                    // --- Root Position Shapes ---
+                                                    '220': '#f43f5e', // Set 1 -> Red
+                                                    '210': '#f97316', // Set 2 -> Orange
+                                                    '320': '#ec4899', // Set 3/4 -> Pink
+
+                                                    // --- Minor-Exclusive Shapes ---
+                                                    '120': '#22d3ee', // Set 1 Min 2nd Inv -> Turquoise
+                                                    '101': '#6366f1', // Set 2 Min 1st Inv -> Indigo
+                                                    '310': '#a8a29e', // Set 3 Min Root ("Stretch") -> Stone
+                                                };
+
+                                                if (SHAPE_COLOR_MAP[fingerprint]) {
+                                                    designerColor = SHAPE_COLOR_MAP[fingerprint];
+                                                } else {
+                                                    // Fallback for unknown shapes (should rarely be hit for closed triads)
+                                                    designerColor = '#94a3b8';
+                                                }
                                             }
                                         }
                                     }
                                 }
-                            }
 
-                            const isVisible = revealedState || isMenuPreview || isDesignerNote;
+                                const isVisible = revealedState || isMenuPreview || isDesignerNote;
 
-                            return (
-                                <React.Fragment key={key}>
-                                    {/* LAYER 1: NOTE CELL (The visual note on the board) */}
-                                    <div
-                                        className="note-cell"
-                                        style={{
-                                            gridRow: visualRow,
-                                            gridColumn: fretIndex + 1,
-                                            // DISABLE INTERACTION WITH CELL WHEN GAME IS ACTIVE
-                                            pointerEvents: memoryGameActive ? 'none' : 'auto'
-                                        }}
-                                        onMouseDown={(e) => {
-                                            if (!memoryGameActive) {
-                                                e.preventDefault();
-                                                isDraggingRef.current = true;
-                                                toggleNote(stringIndex, fretIndex);
-                                            }
-                                        }}
-                                        onMouseEnter={() => {
-                                            if (!memoryGameActive && isDraggingRef.current) {
-                                                toggleNote(stringIndex, fretIndex);
-                                            }
-                                        }}
-                                    >
+                                return (
+                                    <React.Fragment key={key}>
+                                        {/* LAYER 1: NOTE BUTTON */}
                                         <div
-                                            className={`note-circle ${isVisible ? 'revealed' : ''} ${feedbackState || ''} ${isMemoryTarget ? 'memory-target' : ''}`}
-                                            style={
-                                                isDesignerNote ? {
-                                                    backgroundColor: designerColor,
-                                                    borderColor: designerColor,
-                                                    color: '#0f172a', // Dark text on bright colors
-                                                    boxShadow: `0 0 10px ${designerColor}`,
-                                                    opacity: 1
-                                                } :
-                                                    (isMenuPreview && !revealedState ? {
-                                                        backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                                                        borderColor: 'rgba(96, 165, 250, 0.4)',
-                                                        color: 'rgba(255, 255, 255, 0.7)',
-                                                        boxShadow: 'none'
-                                                    } : {})
-                                            }
+                                            className={`note-cell ${isVisible ? 'visible' : ''}`}
+                                            style={{
+                                                gridColumn: fretIndex + 1,
+                                                gridRow: visualRow,
+                                                // Pointer Events Logic:
+                                                // If Memory Game is Active -> Only allow clicks if it's a valid target string
+                                                pointerEvents: (memoryGameActive && !memoryAllowedStrings.includes(stringIndex)) ? 'none' : 'auto'
+                                            }}
+                                            onClick={() => {
+                                                if (activeGameMode === 'memory') {
+                                                    if (!memoryGameActive) return; // Wait for start
+                                                    // In memory game, clicking the cell triggers the menu (handled by state)
+                                                    // But we need to define target.
+                                                    setMemoryTarget({ s: stringIndex, f: fretIndex, note });
+                                                } else if (activeGameMode === 'triad-hunt') {
+                                                    checkTriadClick(stringIndex, fretIndex);
+                                                } else if (practiceActive) {
+                                                    handlePracticeClick(stringIndex, fretIndex);
+                                                } else {
+                                                    // Explorer Mode
+                                                    toggleNote(stringIndex, fretIndex);
+                                                }
+                                            }}
                                         >
-                                            {isMemoryTarget ? '?' : (isDesignerNote ? designerLabel : note)}
-                                        </div>
-                                    </div>
-
-                                    {/* LAYER 2: PIE MENU (Overlay on top, independent sibling) */}
-                                    {isMemoryTarget && (
-                                        <div style={{
-                                            gridRow: visualRow,
-                                            gridColumn: fretIndex + 1,
-                                            position: 'relative',
-                                            pointerEvents: 'none', // Allow clicks to pass through empty space
-                                            zIndex: 50
-                                        }}>
-                                            <div style={{
-                                                position: 'absolute', top: '50%', left: '50%', width: 0, height: 0,
-                                                overflow: 'visible'
-                                            }}>
-                                                {/* Glow effect background */}
-                                                <div style={{
-                                                    position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                                                    width: '140px', height: '140px', borderRadius: '50%',
-                                                    background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, rgba(15, 23, 42, 0) 70%)',
-                                                }} />
-
-                                                {/* Render Slices */}
-                                                {['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'].map((n, i) => {
-                                                    if (!memoryAllowedNotes.includes(n)) return null;
-
-                                                    // Logik: A at Top (-90 deg). Each step 30 deg.
-                                                    const angle = (i * 30) - 90;
-                                                    const rad = angle * (Math.PI / 180);
-                                                    const radius = 55; // Distance from center note
-                                                    const x = Math.cos(rad) * radius;
-                                                    const y = Math.sin(rad) * radius;
-
-                                                    return (
-                                                        <button
-                                                            key={`pie-${n}`}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleMemoryGuess(n, e);
-                                                            }}
-                                                            style={{
-                                                                position: 'absolute',
-                                                                left: `${x}px`, top: `${y}px`,
-                                                                transform: 'translate(-50%, -50%)',
-                                                                width: '34px', height: '34px',
-                                                                borderRadius: '50%',
-                                                                border: '2px solid rgba(59, 130, 246, 0.5)',
-                                                                backgroundColor: '#0f172a',
-                                                                color: '#f8fafc',
-                                                                fontWeight: 'bold',
-                                                                fontSize: '0.85rem',
-                                                                boxShadow: '0 4px 6px rgba(0,0,0,0.5)',
-                                                                cursor: 'pointer',
-                                                                pointerEvents: 'auto', // Button accepts clicks
-                                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                transition: 'transform 0.1s',
-                                                                zIndex: 101,
-                                                                animation: 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'
-                                                            }}
-                                                            onMouseEnter={e => {
-                                                                e.target.style.transform = 'translate(-50%, -50%) scale(1.2)';
-                                                                e.target.style.borderColor = '#60a5fa';
-                                                                e.target.style.backgroundColor = '#1e293b';
-                                                            }}
-                                                            onMouseLeave={e => {
-                                                                e.target.style.transform = 'translate(-50%, -50%) scale(1)';
-                                                                e.target.style.borderColor = 'rgba(59, 130, 246, 0.5)';
-                                                                e.target.style.backgroundColor = '#0f172a';
-                                                            }}
-                                                        >
-                                                            {n}
-                                                        </button>
-                                                    );
-                                                })}
-                                                <style>{`@keyframes popIn { from { transform: translate(-50%, -50%) scale(0); opacity: 0; } to { opacity: 1; } }`}</style>
+                                            <div
+                                                className={`note-circle ${isVisible ? 'revealed' : ''} ${feedbackState || ''} ${isMemoryTarget ? 'memory-target' : ''}`}
+                                                style={
+                                                    isDesignerNote ? {
+                                                        backgroundColor: designerColor,
+                                                        borderColor: designerColor,
+                                                        color: '#0f172a', // Dark text on bright colors
+                                                        boxShadow: `0 0 10px ${designerColor}`,
+                                                        opacity: 1
+                                                    } :
+                                                        (isMenuPreview && !revealedState ? {
+                                                            backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                                                            borderColor: 'rgba(96, 165, 250, 0.4)',
+                                                            color: 'rgba(255, 255, 255, 0.7)',
+                                                            boxShadow: 'none'
+                                                        } : {})
+                                                }
+                                            >
+                                                {isMemoryTarget ? '?' : (isDesignerNote ? designerLabel : note)}
                                             </div>
                                         </div>
-                                    )}
-                                </React.Fragment>
+
+                                        {/* LAYER 2: PIE MENU (Overlay on top, independent sibling) */}
+                                        {isMemoryTarget && (
+                                            <div style={{
+                                                gridRow: visualRow,
+                                                gridColumn: fretIndex + 1,
+                                                position: 'relative',
+                                                pointerEvents: 'none', // Allow clicks to pass through empty space
+                                                zIndex: 50
+                                            }}>
+                                                <div style={{
+                                                    position: 'absolute', top: '50%', left: '50%', width: 0, height: 0,
+                                                    overflow: 'visible'
+                                                }}>
+                                                    {/* Glow effect background */}
+                                                    <div style={{
+                                                        position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                                                        width: '140px', height: '140px', borderRadius: '50%',
+                                                        background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, rgba(15, 23, 42, 0) 70%)',
+                                                    }} />
+
+                                                    {/* Render Slices */}
+                                                    {['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'].map((n, i) => {
+                                                        if (!memoryAllowedNotes.includes(n)) return null;
+
+                                                        // Logik: A at Top (-90 deg). Each step 30 deg.
+                                                        const angle = (i * 30) - 90;
+                                                        const rad = angle * (Math.PI / 180);
+                                                        const radius = 55; // Distance from center note
+                                                        const x = Math.cos(rad) * radius;
+                                                        const y = Math.sin(rad) * radius;
+
+                                                        return (
+                                                            <button
+                                                                key={`pie-${n}`}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleMemoryGuess(n, e);
+                                                                }}
+                                                                style={{
+                                                                    position: 'absolute',
+                                                                    left: `${x}px`, top: `${y}px`,
+                                                                    transform: 'translate(-50%, -50%)',
+                                                                    width: '34px', height: '34px',
+                                                                    borderRadius: '50%',
+                                                                    border: '2px solid rgba(59, 130, 246, 0.5)',
+                                                                    backgroundColor: '#0f172a',
+                                                                    color: '#f8fafc',
+                                                                    fontWeight: 'bold',
+                                                                    fontSize: '0.85rem',
+                                                                    boxShadow: '0 4px 6px rgba(0,0,0,0.5)',
+                                                                    cursor: 'pointer',
+                                                                    pointerEvents: 'auto', // Button accepts clicks
+                                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                    transition: 'transform 0.1s',
+                                                                    zIndex: 101,
+                                                                    animation: 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'
+                                                                }}
+                                                                onMouseEnter={e => {
+                                                                    e.target.style.transform = 'translate(-50%, -50%) scale(1.2)';
+                                                                    e.target.style.borderColor = '#60a5fa';
+                                                                    e.target.style.backgroundColor = '#1e293b';
+                                                                }}
+                                                                onMouseLeave={e => {
+                                                                    e.target.style.transform = 'translate(-50%, -50%) scale(1)';
+                                                                    e.target.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+                                                                    e.target.style.backgroundColor = '#0f172a';
+                                                                }}
+                                                            >
+                                                                {n}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                    <style>{`@keyframes popIn { from { transform: translate(-50%, -50%) scale(0); opacity: 0; } to { opacity: 1; } }`}</style>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </React.Fragment>
+                                );
+                            });
+                        })}
+                    </div>
+
+                    {/* Fret Numbers Row */}
+                    <div className="fret-numbers">
+                        {Array.from({ length: FRET_COUNT + 1 }).map((_, i) => {
+                            const showNumber = MARKERS.includes(i) || DOUBLE_MARKERS.includes(i);
+                            return (
+                                <div key={`fret-num-${i}`} className="fret-number-cell">
+                                    {showNumber ? i : ''}
+                                </div>
                             );
-                        });
-                    })}
+                        })}
+                    </div>
                 </div>
-
-                {/* Fret Numbers Row */}
-                <div className="fret-numbers">
-                    {Array.from({ length: FRET_COUNT + 1 }).map((_, i) => {
-                        const showNumber = MARKERS.includes(i) || DOUBLE_MARKERS.includes(i);
-                        return (
-                            <div key={`fret-num-${i}`} className="fret-number-cell">
-                                {showNumber ? i : ''}
-                            </div>
-                        );
-                    })}
-                </div>
-
             </div>
-
             {/* FLYING DIAMONDS */}
             {
                 diamonds.map(d => (
