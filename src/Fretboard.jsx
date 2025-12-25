@@ -97,6 +97,8 @@ export default function Fretboard() {
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
+    const [showMenu, setShowMenu] = useState(false); // HAMBURGER MENU STATE
+
     // --- GLOBAL SETTINGS ---
     const [fretCount, setFretCount] = useState(13); // Default requested by user
 
@@ -1261,106 +1263,84 @@ export default function Fretboard() {
                 </div>
             </div>
 
-            {/* GAME SELECTION MENU */}
-            {/* MAIN NAVIGATION */}
-            <div className="flex flex-col gap-4 mb-8 items-center w-full max-w-3xl mx-auto px-4 sm:px-0">
+            {/* SECTION HEADER: GUITAR TOOLS + HAMBURGER */}
+            {/* Adjusted marginTop to account for fixed navbar */}
+            <div style={{ marginTop: '80px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
+                <button
+                    onClick={() => setShowMenu(!showMenu)}
+                    style={{
+                        background: 'transparent', border: 'none', color: '#f8fafc',
+                        fontSize: '2rem', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                        marginTop: '-4px' // Optical alignment with text
+                    }}
+                >
+                    ☰
+                </button>
 
-                {/* MOBILE: DROPDOWN MENU */}
-                <div className="sm:hidden w-full">
-                    <label className="block text-xs font-bold text-slate-500 tracking-widest mb-2 text-center uppercase">Select Mode</label>
-                    <div className="relative">
-                        <select
-                            value={activeGameMode}
-                            onChange={(e) => switchGameMode(e.target.value)}
-                            className="w-full appearance-none bg-slate-800 border border-slate-600 text-white py-3 px-4 pr-10 rounded-lg font-bold shadow-lg focus:outline-none focus:border-blue-500 text-center uppercase tracking-widest"
-                        >
-                            <optgroup label="TOOLS">
-                                <option value="chord-designer">Triads (Tool)</option>
-                            </optgroup>
-                            <optgroup label="GAMES">
-                                <option value="string-walker">String-Walker</option>
-                                <option value="triad-hunt">Triad-Hunt</option>
-                                <option value="memory">Note-Hunt</option>
-                            </optgroup>
-                        </select>
-                        {/* Custom Arrow Icon */}
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
-                            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
-                        </div>
-                    </div>
-                </div>
-
-                {/* DESKTOP/TABLET: BUTTON ROWS */}
-                <div className="hidden sm:flex flex-col sm:flex-row items-center justify-center gap-8 w-full">
-
-                    {/* TOOLS */}
-                    <div className="flex items-center gap-4">
-                        <div className="text-right text-slate-500 text-xs font-bold tracking-widest uppercase w-[50px]">TOOLS:</div>
-                        <button
-                            className={`
-                                px-5 py-2.5 text-sm font-bold rounded-lg 
-                                transition-all shadow-md active:translate-y-px 
-                                tracking-widest border
-                                ${activeGameMode === 'chord-designer'
-                                    ? 'bg-rose-500 text-white border-rose-500 shadow-rose-500/40'
-                                    : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-rose-500 hover:text-white hover:border-rose-500'}
-                            `}
-                            onClick={() => switchGameMode('chord-designer')}
-                        >
-                            TRIADS
-                        </button>
-                    </div>
-
-                    {/* GAMES */}
-                    <div className="flex items-center gap-4">
-                        <div className="text-right text-slate-500 text-xs font-bold tracking-widest uppercase w-[50px]">GAMES:</div>
-
-                        <div className="flex gap-2">
-                            <button
-                                className={`
-                                    px-5 py-2.5 text-sm font-bold rounded-lg 
-                                    transition-all shadow-md active:translate-y-px 
-                                    tracking-widest border
-                                    ${activeGameMode === 'string-walker'
-                                        ? 'bg-teal-400 text-slate-900 border-teal-400 shadow-teal-400/40'
-                                        : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-teal-400 hover:text-slate-900 hover:border-teal-400'}
-                                `}
-                                onClick={() => switchGameMode('string-walker')}
-                            >
-                                STRING-WALKER
-                            </button>
-
-                            <button
-                                className={`
-                                    px-5 py-2.5 text-sm font-bold rounded-lg 
-                                    transition-all shadow-md active:translate-y-px 
-                                    tracking-widest border
-                                    ${activeGameMode === 'triad-hunt'
-                                        ? 'bg-violet-500 text-white border-violet-500 shadow-violet-500/40'
-                                        : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-violet-500 hover:text-white hover:border-violet-500'}
-                                `}
-                                onClick={() => switchGameMode('triad-hunt')}
-                            >
-                                TRIAD-HUNT
-                            </button>
-
-                            <button
-                                className={`
-                                    px-5 py-2.5 text-sm font-bold rounded-lg 
-                                    transition-all shadow-md active:translate-y-px 
-                                    tracking-widest border
-                                    ${activeGameMode === 'memory'
-                                        ? 'bg-blue-500 text-white border-blue-500 shadow-blue-500/40'
-                                        : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-blue-500 hover:text-white hover:border-blue-500'}
-                                `}
-                                onClick={() => switchGameMode('memory')}
-                            >
-                                NOTE-HUNT
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <h1 style={{
+                    margin: 0,
+                    fontSize: '2.5rem',
+                    fontWeight: '800',
+                    background: 'linear-gradient(to right, #2dd4bf, #3b82f6)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    lineHeight: 1
+                }}>
+                    Guitar Tools
+                </h1>
             </div>
+
+            {/* HAMBURGER MENU DRAWER */}
+            {showMenu && (
+                <div style={{
+                    position: 'fixed', top: '60px', left: 0, width: '280px', bottom: 0,
+                    background: '#1e293b', borderRight: '1px solid #334155',
+                    zIndex: 1999, padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px',
+                    boxShadow: '10px 0 30px rgba(0,0,0,0.5)',
+                    animation: 'slideIn 0.2s ease-out'
+                }}>
+                    <div className="text-xs font-bold text-slate-500 tracking-widest uppercase mb-2">Tools</div>
+                    <button
+                        onClick={() => { switchGameMode('chord-designer'); setShowMenu(false); }}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-bold transition-all border ${activeGameMode === 'chord-designer' ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'}`}
+                    >
+                        🎸 TRIADS (TOOL)
+                    </button>
+
+                    <div className="text-xs font-bold text-slate-500 tracking-widest uppercase mb-2 mt-4">Games</div>
+
+                    <button
+                        onClick={() => { switchGameMode('string-walker'); setShowMenu(false); }}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-bold transition-all border ${activeGameMode === 'string-walker' ? 'bg-teal-500 text-slate-900 border-teal-500' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'}`}
+                    >
+                        🚶 STRING WALKER
+                    </button>
+
+                    <button
+                        onClick={() => { switchGameMode('triad-hunt'); setShowMenu(false); }}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-bold transition-all border ${activeGameMode === 'triad-hunt' ? 'bg-violet-500 text-white border-violet-500' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'}`}
+                    >
+                        📐 TRIAD HUNT
+                    </button>
+
+                    <button
+                        onClick={() => { switchGameMode('memory'); setShowMenu(false); }}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-bold transition-all border ${activeGameMode === 'memory' ? 'bg-blue-500 text-white border-blue-500' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'}`}
+                    >
+                        🧠 NOTE HUNT
+                    </button>
+
+                    <style>{`@keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
+                </div>
+            )}
+
+            {/* CLICK OUTSIDE TO CLOSE - Simple Overlay */}
+            {showMenu && (
+                <div
+                    onClick={() => setShowMenu(false)}
+                    style={{ position: 'fixed', top: '60px', left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1998 }}
+                />
+            )}
 
             {/* CHORD DESIGNER HUD */}
             {activeGameMode === 'chord-designer' && (

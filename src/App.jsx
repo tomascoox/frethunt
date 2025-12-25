@@ -2,17 +2,11 @@ import Fretboard from './Fretboard'
 
 function App() {
   return (
-    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '120px' }}>
-      <header style={{ marginBottom: '0px', textAlign: 'center', padding: '0 40px', maxWidth: '800px', margin: '0 auto 0 auto' }}>
-        <h1 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '10px', background: 'linear-gradient(to right, #2dd4bf, #3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          Guitar Tools
-        </h1>
-
-      </header>
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '0' }}>
 
       <Fretboard />
 
-      <footer style={{ marginTop: '60px', color: '#475569', fontSize: '0.9rem' }}>
+      <footer style={{ marginTop: '60px', color: '#475569', fontSize: '0.9rem', textAlign: 'center', padding: '0 20px', width: '100%', boxSizing: 'border-box' }}>
         Tomas Music Tools v1.0 created by Tomas Coox / Studio Joox AB
       </footer>
     </div>
