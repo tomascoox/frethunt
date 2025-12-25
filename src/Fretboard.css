@@ -22,7 +22,7 @@
 
     /* Responsive Variables */
     --base-unit: 80px;
-    --nut-width: 50px;
+    --nut-width: 38px;
     --string-height: 34px;
     --fret-width: 6px;
 }
@@ -32,7 +32,7 @@
 @media (max-width: 1024px) {
     .fretboard-wrapper {
         --base-unit: 52px;
-        --nut-width: 45px;
+        --nut-width: 34px;
         --string-height: 30px;
         --fret-width: 5px;
         padding: 20px;
@@ -43,7 +43,7 @@
 @media (max-width: 768px) {
     .fretboard-wrapper {
         --base-unit: 45px;
-        --nut-width: 40px;
+        --nut-width: 30px;
         --string-height: 28px;
         --fret-width: 4px;
         padding: 10px;
@@ -59,7 +59,7 @@
     .fretboard-wrapper {
         --base-unit: 24px;
         /* Aggressive shrink for mobile portrait */
-        --nut-width: 30px;
+        --nut-width: 24px;
         --string-height: 24px;
         --fret-width: 3px;
         padding: 15px 12px;
