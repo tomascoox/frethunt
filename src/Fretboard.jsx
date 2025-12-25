@@ -1304,7 +1304,7 @@ export default function Fretboard() {
                         onClick={() => { switchGameMode('chord-designer'); setShowMenu(false); }}
                         className={`w-full text-left px-4 py-3 rounded-lg font-bold transition-all border ${activeGameMode === 'chord-designer' ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'}`}
                     >
-                        🎸 TRIADS (TOOL)
+                        🎸 TRIADS
                     </button>
 
                     <div className="text-xs font-bold text-slate-500 tracking-widest uppercase mb-2 mt-4">Games</div>
@@ -1344,22 +1344,20 @@ export default function Fretboard() {
 
             {/* CHORD DESIGNER HUD */}
             {activeGameMode === 'chord-designer' && (
-                <div className="game-hud" style={{ flexDirection: 'column', gap: '15px', marginBottom: '50px', background: 'rgba(30, 41, 59, 0.5)', padding: '20px', borderRadius: '12px', border: '1px solid #f43f5e' }}>
+                <div className="game-hud" style={{ flexDirection: 'column', gap: '8px', marginBottom: '15px', background: 'rgba(30, 41, 59, 0.5)', padding: '10px', borderRadius: '12px', border: '1px solid #f43f5e' }}>
 
                     {/* ROW 1: ROOT (CIRCLE OF FIFTHS) */}
-                    {/* ROW 1: ROOT (CIRCLE OF FIFTHS) */}
-                    <div className="flex flex-col gap-3 items-center w-full">
-                        <label className="text-slate-400 text-xs font-bold tracking-widest">ROOT NOTE</label>
-                        <div className="flex flex-wrap justify-center gap-2 w-full max-w-sm">
+                    <div className="flex flex-col gap-1 items-center w-full">
+                        <div className="flex flex-wrap justify-center gap-1 w-full max-w-sm">
                             {['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'].map(note => (
                                 <button
                                     key={note}
                                     onClick={() => setDesignerRoot(note)}
                                     className={`
-                                        w-10 h-10 rounded-md font-bold text-sm transition-all
+                                        w-7 h-7 rounded-md font-bold text-[0.6rem] transition-all
                                         flex items-center justify-center border
                                         ${designerRoot === note
-                                            ? 'bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-500/50 scale-110 z-10'
+                                            ? 'bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-500/50 scale-105 z-10'
                                             : 'bg-slate-800 text-slate-400 border-slate-600 hover:border-slate-400 hover:text-white'}
                                     `}
                                 >
@@ -1369,15 +1367,17 @@ export default function Fretboard() {
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '40px', flexWrap: 'wrap', marginTop: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', marginTop: '5px' }}>
 
                         {/* ROW 2: TYPE */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'center' }}>
-                            <label style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>QUALITY</label>
-                            <div style={{ display: 'flex', gap: '5px' }}>
+                            <div style={{ display: 'flex', gap: '4px' }}>
                                 <button
-                                    className="btn"
                                     onClick={() => setDesignerType('major')}
+                                    className={`
+                                        h-7 px-3 rounded-md font-bold text-[0.6rem] transition-all
+                                        flex items-center justify-center border
+                                    `}
                                     style={{
                                         backgroundColor: designerType === 'major' ? '#f43f5e' : '#1e293b',
                                         color: designerType === 'major' ? '#fff' : '#94a3b8',
@@ -1388,8 +1388,11 @@ export default function Fretboard() {
                                     MAJOR
                                 </button>
                                 <button
-                                    className="btn"
                                     onClick={() => setDesignerType('minor')}
+                                    className={`
+                                        h-7 px-3 rounded-md font-bold text-[0.6rem] transition-all
+                                        flex items-center justify-center border
+                                    `}
                                     style={{
                                         backgroundColor: designerType === 'minor' ? '#f43f5e' : '#1e293b',
                                         color: designerType === 'minor' ? '#fff' : '#94a3b8',
@@ -1403,31 +1406,28 @@ export default function Fretboard() {
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'center' }}>
-                            <label style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600, marginBottom: '5px' }}>ACTIVE STRINGS</label>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '4px', width: '260px' }}>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '2px', width: '220px' }}>
                                 {/* Row 1: Keys */}
                                 {[5, 4, 3, 2, 1, 0].map((stringIndex, i) => (
                                     <button
                                         key={stringIndex}
-                                        className="btn"
                                         onClick={() => {
                                             setDesignerStrings(prev =>
                                                 prev.includes(stringIndex) ? prev.filter(s => s !== stringIndex) : [...prev, stringIndex]
                                             );
                                         }}
+                                        className={`
+                                            h-7 w-full rounded-md font-bold text-[0.6rem] transition-all
+                                            flex items-center justify-center border
+                                        `}
                                         style={{
                                             backgroundColor: designerStrings.includes(stringIndex) ? '#f43f5e' : '#1e293b',
                                             color: designerStrings.includes(stringIndex) ? '#fff' : '#94a3b8',
                                             borderColor: designerStrings.includes(stringIndex) ? '#f43f5e' : '#475569',
-                                            padding: '8px 0',
-                                            fontSize: '0.9rem',
-                                            fontWeight: 'bold',
-                                            width: '100%',
                                             opacity: designerStrings.includes(stringIndex) ? 1 : 0.5,
                                             gridColumn: i + 1,
-                                            gridRow: 1,
-                                            borderRadius: '6px',
-                                            marginBottom: '0px'
+                                            gridRow: 1
                                         }}
                                     >
                                         {6 - stringIndex}
