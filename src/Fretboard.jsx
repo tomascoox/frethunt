@@ -88,6 +88,15 @@ const TRIAD_SHAPES = {
 
 
 export default function Fretboard() {
+    // DETECT MOBILE FOR EVEN FRETS
+    const [isMobile, setIsMobile] = useState(false);
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 700);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
     // --- GLOBAL SETTINGS ---
     const [fretCount, setFretCount] = useState(13); // Default requested by user
 
@@ -2223,19 +2232,26 @@ export default function Fretboard() {
                 </div>
 
                 {/* RIGHT CONTENT: Board + Fret Numbers */}
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', width: isMobile ? '100%' : 'auto' }}>
                     {(() => {
                         // Dynamic Width Calculation
-                        const activeRatios = FRET_WIDTH_RATIOS.slice(0, fretCount);
+                        // If Mobile (<700px), use uniform width (1.0) for better playability
+                        // If Desktop/Tablet, use authentic decreasing ratios
+                        const activeRatios = isMobile
+                            ? new Array(fretCount).fill(1.0)
+                            : FRET_WIDTH_RATIOS.slice(0, fretCount);
 
-                        // Define grid columns using Responsive CSS Variables
-                        const gridCols = `var(--nut-width) ${activeRatios.map(r => `calc(${r} * var(--base-unit))`).join(' ')}`;
+                        // If Mobile (<700px), use uniform width (1fr) to fill screen
+                        // If Desktop/Tablet, use authentic decreasing ratios
+                        const gridCols = isMobile
+                            ? `var(--nut-width) repeat(${fretCount}, 1fr)`
+                            : `var(--nut-width) ${activeRatios.map(r => `calc(${r} * var(--base-unit))`).join(' ')}`;
 
                         return (
                             <>
                                 <div className="fretboard" style={{
-                                    width: 'fit-content',
-                                    minWidth: 'fit-content',
+                                    width: isMobile ? '100%' : 'fit-content',
+                                    minWidth: isMobile ? '0' : 'fit-content',
                                     gridTemplateColumns: gridCols
                                 }}>
                                     {/* Inlays (Background) */}
@@ -2677,8 +2693,8 @@ export default function Fretboard() {
 
                                 {/* Fret Numbers Row */}
                                 <div className="fret-numbers" style={{
-                                    width: 'fit-content',
-                                    minWidth: 'fit-content',
+                                    width: isMobile ? '100%' : 'fit-content',
+                                    minWidth: isMobile ? '0' : 'fit-content',
                                     gridTemplateColumns: gridCols
                                 }}>
                                     {Array.from({ length: fretCount + 1 }).map((_, i) => {

@@ -62,8 +62,8 @@
         --nut-width: 30px;
         --string-height: 24px;
         --fret-width: 3px;
-        padding: 15px 20px;
-        /* More breathing room */
+        padding: 15px 12px;
+        /* Balanced mobile padding */
     }
 
 
