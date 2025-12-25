@@ -1065,7 +1065,7 @@ export default function Fretboard() {
                             flexDirection: 'column',
                             justifyContent: 'center',
                             alignItems: 'center',
-                            gap: '68px', // Match new row height (approx 2 * 34px)
+                            gap: 'calc(2 * var(--string-height))', // Match new row height (approx 2 * 34px)
                             zIndex: 0,
                             pointerEvents: 'none'
                         }}>
@@ -1096,7 +1096,7 @@ export default function Fretboard() {
     const hideAll = () => setRevealed({});
 
     return (
-        <div className="fretboard-wrapper" style={{ marginTop: '80px' }}>
+        <div className="fretboard-wrapper" style={{ marginTop: '0' }}>
             {/* SETTINGS MODAL */}
             {showSettings && (
                 <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(5px)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -1171,9 +1171,9 @@ export default function Fretboard() {
             }}>
                 {/* LEFT: BRAND */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'linear-gradient(135deg, #3b82f6, #9333ea)', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '1.5rem', boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)' }}>🎸</div>
+
                     <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '900', color: '#f8fafc', letterSpacing: '1px', fontStyle: 'italic' }}>
-                        Magical <span style={{ color: '#3b82f6' }}>Music Tools</span>
+                        Tomas <span style={{ color: '#3b82f6' }}>Music Tools</span>
                     </h1>
                 </div>
 
@@ -1195,66 +1195,102 @@ export default function Fretboard() {
 
             {/* GAME SELECTION MENU */}
             {/* MAIN NAVIGATION */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '30px', alignItems: 'center' }}>
+            <div className="flex flex-col gap-4 mb-8 items-center w-full max-w-3xl mx-auto px-4 sm:px-0">
 
-                {/* TOOLS ROW */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 'bold', letterSpacing: '1px', width: '60px', textAlign: 'right' }}>TOOLS:</div>
-                    <button
-                        className="btn"
-                        style={{
-                            backgroundColor: activeGameMode === 'chord-designer' ? '#f43f5e' : '#1e293b', // Rose / Red theme
-                            color: activeGameMode === 'chord-designer' ? '#fff' : '#94a3b8',
-                            borderColor: activeGameMode === 'chord-designer' ? '#f43f5e' : '#334155',
-                            fontSize: '1rem', padding: '10px 20px', letterSpacing: '1px'
-                        }}
-                        onClick={() => switchGameMode('chord-designer')}
-                    >
-                        TRIADS
-                    </button>
+                {/* MOBILE: DROPDOWN MENU */}
+                <div className="sm:hidden w-full">
+                    <label className="block text-xs font-bold text-slate-500 tracking-widest mb-2 text-center uppercase">Select Mode</label>
+                    <div className="relative">
+                        <select
+                            value={activeGameMode}
+                            onChange={(e) => switchGameMode(e.target.value)}
+                            className="w-full appearance-none bg-slate-800 border border-slate-600 text-white py-3 px-4 pr-10 rounded-lg font-bold shadow-lg focus:outline-none focus:border-blue-500 text-center uppercase tracking-widest"
+                        >
+                            <optgroup label="TOOLS">
+                                <option value="chord-designer">Triads (Tool)</option>
+                            </optgroup>
+                            <optgroup label="GAMES">
+                                <option value="string-walker">String-Walker</option>
+                                <option value="triad-hunt">Triad-Hunt</option>
+                                <option value="memory">Note-Hunt</option>
+                            </optgroup>
+                        </select>
+                        {/* Custom Arrow Icon */}
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+                            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
+                        </div>
+                    </div>
                 </div>
 
-                {/* GAMES ROW */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 'bold', letterSpacing: '1px', width: '60px', textAlign: 'right' }}>GAMES:</div>
-                    <button
-                        className="btn"
-                        style={{
-                            backgroundColor: activeGameMode === 'string-walker' ? '#2dd4bf' : '#1e293b',
-                            color: activeGameMode === 'string-walker' ? '#0f172a' : '#94a3b8',
-                            borderColor: activeGameMode === 'string-walker' ? '#2dd4bf' : '#334155',
-                            fontSize: '1rem', padding: '10px 20px', letterSpacing: '1px'
-                        }}
-                        onClick={() => switchGameMode('string-walker')}
-                    >
-                        STRING-WALKER
-                    </button>
+                {/* DESKTOP/TABLET: BUTTON ROWS */}
+                <div className="hidden sm:flex flex-col sm:flex-row items-center justify-center gap-8 w-full">
 
-                    <button
-                        className="btn"
-                        style={{
-                            backgroundColor: activeGameMode === 'triad-hunt' ? '#8b5cf6' : '#1e293b',
-                            color: activeGameMode === 'triad-hunt' ? '#0f172a' : '#94a3b8',
-                            borderColor: activeGameMode === 'triad-hunt' ? '#8b5cf6' : '#334155',
-                            fontSize: '1rem', padding: '10px 20px', letterSpacing: '1px'
-                        }}
-                        onClick={() => switchGameMode('triad-hunt')}
-                    >
-                        TRIAD-HUNT
-                    </button>
+                    {/* TOOLS */}
+                    <div className="flex items-center gap-4">
+                        <div className="text-right text-slate-500 text-xs font-bold tracking-widest uppercase w-[50px]">TOOLS:</div>
+                        <button
+                            className={`
+                                px-5 py-2.5 text-sm font-bold rounded-lg 
+                                transition-all shadow-md active:translate-y-px 
+                                tracking-widest border
+                                ${activeGameMode === 'chord-designer'
+                                    ? 'bg-rose-500 text-white border-rose-500 shadow-rose-500/40'
+                                    : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-rose-500 hover:text-white hover:border-rose-500'}
+                            `}
+                            onClick={() => switchGameMode('chord-designer')}
+                        >
+                            TRIADS
+                        </button>
+                    </div>
 
-                    <button
-                        className="btn"
-                        style={{
-                            backgroundColor: activeGameMode === 'memory' ? '#3b82f6' : '#1e293b',
-                            color: activeGameMode === 'memory' ? '#0f172a' : '#94a3b8',
-                            borderColor: activeGameMode === 'memory' ? '#3b82f6' : '#334155',
-                            fontSize: '1rem', padding: '10px 20px', letterSpacing: '1px'
-                        }}
-                        onClick={() => switchGameMode('memory')}
-                    >
-                        NOTE-HUNT
-                    </button>
+                    {/* GAMES */}
+                    <div className="flex items-center gap-4">
+                        <div className="text-right text-slate-500 text-xs font-bold tracking-widest uppercase w-[50px]">GAMES:</div>
+
+                        <div className="flex gap-2">
+                            <button
+                                className={`
+                                    px-5 py-2.5 text-sm font-bold rounded-lg 
+                                    transition-all shadow-md active:translate-y-px 
+                                    tracking-widest border
+                                    ${activeGameMode === 'string-walker'
+                                        ? 'bg-teal-400 text-slate-900 border-teal-400 shadow-teal-400/40'
+                                        : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-teal-400 hover:text-slate-900 hover:border-teal-400'}
+                                `}
+                                onClick={() => switchGameMode('string-walker')}
+                            >
+                                STRING-WALKER
+                            </button>
+
+                            <button
+                                className={`
+                                    px-5 py-2.5 text-sm font-bold rounded-lg 
+                                    transition-all shadow-md active:translate-y-px 
+                                    tracking-widest border
+                                    ${activeGameMode === 'triad-hunt'
+                                        ? 'bg-violet-500 text-white border-violet-500 shadow-violet-500/40'
+                                        : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-violet-500 hover:text-white hover:border-violet-500'}
+                                `}
+                                onClick={() => switchGameMode('triad-hunt')}
+                            >
+                                TRIAD-HUNT
+                            </button>
+
+                            <button
+                                className={`
+                                    px-5 py-2.5 text-sm font-bold rounded-lg 
+                                    transition-all shadow-md active:translate-y-px 
+                                    tracking-widest border
+                                    ${activeGameMode === 'memory'
+                                        ? 'bg-blue-500 text-white border-blue-500 shadow-blue-500/40'
+                                        : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-blue-500 hover:text-white hover:border-blue-500'}
+                                `}
+                                onClick={() => switchGameMode('memory')}
+                            >
+                                NOTE-HUNT
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1263,21 +1299,21 @@ export default function Fretboard() {
                 <div className="game-hud" style={{ flexDirection: 'column', gap: '15px', marginBottom: '50px', background: 'rgba(30, 41, 59, 0.5)', padding: '20px', borderRadius: '12px', border: '1px solid #f43f5e' }}>
 
                     {/* ROW 1: ROOT (CIRCLE OF FIFTHS) */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                        <label style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600, textAlign: 'center' }}>ROOT NOTE</label>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '5px' }}>
+                    {/* ROW 1: ROOT (CIRCLE OF FIFTHS) */}
+                    <div className="flex flex-col gap-3 items-center w-full">
+                        <label className="text-slate-400 text-xs font-bold tracking-widest">ROOT NOTE</label>
+                        <div className="flex flex-wrap justify-center gap-2 w-full max-w-sm">
                             {['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'].map(note => (
                                 <button
                                     key={note}
-                                    className="btn"
                                     onClick={() => setDesignerRoot(note)}
-                                    style={{
-                                        backgroundColor: designerRoot === note ? '#f43f5e' : 'transparent',
-                                        color: designerRoot === note ? '#fff' : '#94a3b8',
-                                        borderColor: designerRoot === note ? '#f43f5e' : '#475569',
-                                        fontSize: '0.9rem', padding: '6px 10px', minWidth: '36px',
-                                        boxShadow: designerRoot === note ? '0 0 10px rgba(244, 63, 94, 0.4)' : 'none'
-                                    }}
+                                    className={`
+                                        w-10 h-10 rounded-md font-bold text-sm transition-all
+                                        flex items-center justify-center border
+                                        ${designerRoot === note
+                                            ? 'bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-500/50 scale-110 z-10'
+                                            : 'bg-slate-800 text-slate-400 border-slate-600 hover:border-slate-400 hover:text-white'}
+                                    `}
                                 >
                                     {note}
                                 </button>
@@ -2105,14 +2141,14 @@ export default function Fretboard() {
                     flexDirection: 'column',
                     marginTop: '1px', // Fine-tune alignment with board border
                     marginRight: '12px',
-                    height: `${6 * 34}px` // 6 strings * 34px row height
+                    height: 'calc(6 * var(--string-height))' // 6 strings * var(--string-height)
                 }}>
                     {/* Loop 1 to 6 (Top to Bottom) directly since Flex is Column */
                         [1, 2, 3, 4, 5, 6].map((num) => (
                             <div
                                 key={`gutter-num-${num}`}
                                 style={{
-                                    height: '34px',
+                                    height: 'var(--string-height)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'flex-end',
@@ -2132,11 +2168,9 @@ export default function Fretboard() {
                     {(() => {
                         // Dynamic Width Calculation
                         const activeRatios = FRET_WIDTH_RATIOS.slice(0, fretCount);
-                        const BASE_UNIT = 80; // Adjusted Base Unit for comfortable size
 
-                        // Define grid columns using Rigid Pixels to avoid collapse
-                        // Nut is 50px fixed.
-                        const gridCols = `50px ${activeRatios.map(r => `${r * BASE_UNIT}px`).join(' ')}`;
+                        // Define grid columns using Responsive CSS Variables
+                        const gridCols = `var(--nut-width) ${activeRatios.map(r => `calc(${r} * var(--base-unit))`).join(' ')}`;
 
                         return (
                             <>
@@ -2149,7 +2183,7 @@ export default function Fretboard() {
                                     {renderInlays()}
 
                                     {/* Nut Line */}
-                                    <div className="nut-line" style={{ left: '50px', zIndex: 5 }}></div>
+                                    <div className="nut-line" style={{ left: 'var(--nut-width)', zIndex: 5 }}></div>
 
                                     {/* Fret Lines */}
                                     {Array.from({ length: fretCount }).map((_, i) => (

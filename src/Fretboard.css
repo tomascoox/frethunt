@@ -19,6 +19,64 @@
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+
+    /* Responsive Variables */
+    --base-unit: 80px;
+    --nut-width: 50px;
+    --string-height: 34px;
+}
+
+
+
+
+
+@media (max-width: 1024px) {
+    .fretboard-wrapper {
+        --base-unit: 60px;
+        --nut-width: 45px;
+        --string-height: 30px;
+        padding: 20px;
+        /* Reduce padding */
+    }
+}
+
+@media (max-width: 768px) {
+    .fretboard-wrapper {
+        --base-unit: 45px;
+        --nut-width: 40px;
+        --string-height: 28px;
+        padding: 10px;
+    }
+
+    .btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .fretboard-wrapper {
+        --base-unit: 26px;
+        /* Aggressive shrink for mobile portrait */
+        --nut-width: 30px;
+        --string-height: 24px;
+        padding: 15px 20px;
+        /* More breathing room */
+    }
+
+
+
+    .controls {
+        gap: 4px;
+    }
+
+    .btn {
+        padding: 6px 10px;
+        /* Slightly larger touch target than 4px */
+        font-size: 0.75rem;
+        width: 100%;
+        /* Full width buttons for easier tapping */
+    }
 }
 
 /* Controls Bar */
@@ -26,6 +84,9 @@
     margin-bottom: 20px;
     display: flex;
     gap: 10px;
+    flex-wrap: wrap;
+    /* Allow wrapping on small screens */
+    justify-content: center;
 }
 
 .btn {
@@ -58,6 +119,10 @@
     /* Force fit */
     /* min-width: max-content; REMOVED: Do not force expansion */
     margin: 0 auto;
+    overflow-x: auto;
+    /* Allow scrolling if it still overflows slightly */
+    padding-bottom: 10px;
+    /* Space for scrollbar */
 }
 
 .fretboard {
@@ -73,7 +138,7 @@
     */
     grid-template-columns:
         50px minmax(0, 1.431fr) minmax(0, 1.351fr) minmax(0, 1.275fr) minmax(0, 1.203fr) minmax(0, 1.136fr) minmax(0, 1.072fr) minmax(0, 1.012fr) minmax(0, 0.955fr) minmax(0, 0.902fr) minmax(0, 0.851fr) minmax(0, 0.803fr) minmax(0, 0.758fr) minmax(0, 0.716fr) minmax(0, 0.675fr) minmax(0, 0.638fr) minmax(0, 0.602fr) minmax(0, 0.568fr) minmax(0, 0.536fr) minmax(0, 0.506fr) minmax(0, 0.478fr) minmax(0, 0.451fr) minmax(0, 0.425fr);
-    grid-template-rows: repeat(6, 34px);
+    grid-template-rows: repeat(6, var(--string-height));
     /* Slimmer rows for electric guitar feel */
     /* Slimmer rows for electric guitar feel */
     position: relative;
@@ -123,12 +188,12 @@
 }
 
 .marker.single {
-    width: min(26px, 70%);
+    width: calc(var(--string-height) * 0.7);
     height: auto;
 }
 
 .marker.double {
-    width: min(26px, 70%);
+    width: calc(var(--string-height) * 0.7);
     height: auto;
 }
 
