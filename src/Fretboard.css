@@ -62,8 +62,8 @@
 
 .fretboard {
     display: grid;
-    width: 100%;
-    /* Ensure it takes available width but no more */
+    width: fit-content;
+    /* Ensure it exactly fits the columns defined by grid-template-columns */
     /*
        Realistic Fret Spacing (Scale: 25.5")
        Col 1: Nut/Open (fixed 50px)
