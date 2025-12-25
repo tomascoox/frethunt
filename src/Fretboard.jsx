@@ -2224,6 +2224,7 @@ export default function Fretboard() {
                                             for (let s of sortedStrings) {
                                                 const cands = [];
                                                 for (let f = minF; f <= maxF; f++) {
+                                                    if (f === 0) continue; // SKIP OPEN STRINGS
                                                     const n = getNoteAt(s, f);
                                                     if (targetNotes.includes(n)) {
                                                         cands.push({ s, f, note: n });
