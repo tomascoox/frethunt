@@ -1234,23 +1234,30 @@ export default function Fretboard() {
                 background: 'rgba(15, 23, 42, 0.95)',
                 borderBottom: '1px solid #334155',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '0 40px',
+                padding: '0 20px',
                 zIndex: 1000,
                 backdropFilter: 'blur(10px)',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
             }}>
-                {/* LEFT: BRAND */}
+                {/* LEFT: HAMBURGER + BRAND */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <button
+                        onClick={() => setShowMenu(!showMenu)}
+                        style={{
+                            background: 'transparent', border: 'none', color: '#f8fafc',
+                            fontSize: '1.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center'
+                        }}
+                    >
+                        ☰
+                    </button>
 
                     <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '900', color: '#f8fafc', letterSpacing: '1px', fontStyle: 'italic' }}>
-                        Tomas <span style={{ color: '#3b82f6' }}>Music Tools</span>
+                        Guitar <span style={{ color: '#3b82f6' }}>Tools</span>
                     </h1>
                 </div>
 
-                {/* RIGHT: GLOBAL STATS */}
+                {/* RIGHT: SETTINGS */}
                 <div style={{ display: 'flex', gap: '30px', alignItems: 'center' }}>
-
-                    {/* SETTINGS BTN */}
                     <button
                         onClick={() => setShowSettings(true)}
                         style={{ background: 'transparent', border: 'none', fontSize: '1.8rem', cursor: 'pointer', filter: 'grayscale(100%) opacity(0.5)', transition: 'all 0.2s' }}
@@ -1263,37 +1270,13 @@ export default function Fretboard() {
                 </div>
             </div>
 
-            {/* SECTION HEADER: GUITAR TOOLS + HAMBURGER */}
-            {/* Adjusted marginTop to account for fixed navbar */}
-            <div style={{ marginTop: '80px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
-                <button
-                    onClick={() => setShowMenu(!showMenu)}
-                    style={{
-                        background: 'transparent', border: 'none', color: '#f8fafc',
-                        fontSize: '2rem', cursor: 'pointer', display: 'flex', alignItems: 'center',
-                        marginTop: '-4px' // Optical alignment with text
-                    }}
-                >
-                    ☰
-                </button>
-
-                <h1 style={{
-                    margin: 0,
-                    fontSize: '2.5rem',
-                    fontWeight: '800',
-                    background: 'linear-gradient(to right, #2dd4bf, #3b82f6)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    lineHeight: 1
-                }}>
-                    Guitar Tools
-                </h1>
-            </div>
+            {/* SPACER FOR FIXED NAVBAR */}
+            <div style={{ height: '90px' }} />
 
             {/* HAMBURGER MENU DRAWER */}
             {showMenu && (
                 <div style={{
-                    position: 'fixed', top: '60px', left: 0, width: '280px', bottom: 0,
+                    position: 'fixed', top: '70px', left: 0, width: '280px', bottom: 0,
                     background: '#1e293b', borderRight: '1px solid #334155',
                     zIndex: 1999, padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px',
                     boxShadow: '10px 0 30px rgba(0,0,0,0.5)',
@@ -1330,6 +1313,7 @@ export default function Fretboard() {
                     <style>{`@keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
                 </div>
             )}
+
 
             {/* CLICK OUTSIDE TO CLOSE - Simple Overlay */}
             {showMenu && (
