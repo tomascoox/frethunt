@@ -894,16 +894,19 @@ export default function Fretboard() {
                         <div key={`inlay-${fret}`} style={{
                             gridColumn: colIndex,
                             gridRow: '1 / -1',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'center',
+                            display: 'grid',
+                            gridTemplateRows: 'repeat(6, 1fr)',
+                            justifyItems: 'center',
                             alignItems: 'center',
-                            gap: 'calc(2 * var(--string-height))', // Match new row height (approx 2 * 34px)
+                            height: '100%',
                             zIndex: 0,
                             pointerEvents: 'none'
                         }}>
-                            <div className="marker double" style={{ position: 'static', transform: 'none', margin: 0 }}></div>
-                            <div className="marker double" style={{ position: 'static', transform: 'none', margin: 0 }}></div>
+                            {/* Dot on B String (Row 2, Index 4) */}
+                            <div className="marker double" style={{ gridRow: 2, position: 'static', transform: 'none', margin: 0 }}></div>
+
+                            {/* Dot on A String (Row 5, Index 1) */}
+                            <div className="marker double" style={{ gridRow: 5, position: 'static', transform: 'none', margin: 0 }}></div>
                         </div>
                     );
                 } else {
@@ -1511,105 +1514,118 @@ export default function Fretboard() {
             {/* MEMORY GAME HUD */}
             {/* MEMORY GAME HUD */}
             {activeGameMode === 'memory' && (
-                <div className="game-hud" style={{ width: '100%', flexDirection: 'column', gap: '8px', marginBottom: '15px', background: 'rgba(30, 41, 59, 0.5)', padding: '10px', borderRadius: '12px', border: '1px solid #3b82f6' }}>
+                <div className="game-hud" style={{
+                    width: '100%',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    marginBottom: memoryGameActive ? '130px' : '15px',
+                    background: memoryGameActive ? 'transparent' : 'rgba(30, 41, 59, 0.5)',
+                    padding: '10px',
+                    borderRadius: '12px',
+                    border: memoryGameActive ? 'none' : '1px solid #3b82f6'
+                }}>
 
                     {/* ROW 1: NOTES SELECTOR */}
-                    <div className="flex flex-col gap-1 items-center w-full">
-                        <div className="flex flex-col items-center gap-1 sm:gap-2 w-full max-w-3xl justify-center">
-                            {/* LABEL */}
-                            <div className="text-[0.6rem] sm:text-xs font-bold text-slate-500 w-full text-center shrink-0">NOTES</div>
+                    {!memoryGameActive && (
+                        <div className="flex flex-col gap-1 items-center w-full">
+                            <div className="flex flex-col items-center gap-1 sm:gap-2 w-full max-w-3xl justify-center">
+                                {/* LABEL */}
+                                <div className="text-[0.6rem] sm:text-xs font-bold text-slate-500 w-full text-center shrink-0">NOTES</div>
 
-                            {/* BUTTONS */}
-                            <div className="flex flex-wrap justify-center gap-1 sm:gap-2">
-                                {['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'].map(note => (
-                                    <button
-                                        key={note}
-                                        onPointerDown={(e) => {
-                                            e.preventDefault();
-                                            e.currentTarget.releasePointerCapture(e.pointerId); // Allow smooth dragging
-                                            const isActive = memoryAllowedNotes.includes(note);
-                                            const action = isActive ? 'remove' : 'add';
-                                            dragSelectRef.current = { active: true, type: 'note', action };
+                                {/* BUTTONS */}
+                                <div className="flex flex-wrap justify-center gap-1 sm:gap-2">
+                                    {['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'].map(note => (
+                                        <button
+                                            key={note}
+                                            onPointerDown={(e) => {
+                                                e.preventDefault();
+                                                e.currentTarget.releasePointerCapture(e.pointerId); // Allow smooth dragging
+                                                const isActive = memoryAllowedNotes.includes(note);
+                                                const action = isActive ? 'remove' : 'add';
+                                                dragSelectRef.current = { active: true, type: 'note', action };
 
-                                            // Immediate update
-                                            if (action === 'add') setMemoryAllowedNotes(prev => [...prev, note]);
-                                            else setMemoryAllowedNotes(prev => prev.filter(n => n !== note));
-                                        }}
-                                        onPointerEnter={() => {
-                                            const { active, type, action } = dragSelectRef.current;
-                                            if (active && type === 'note') {
-                                                if (action === 'add' && !memoryAllowedNotes.includes(note)) {
-                                                    setMemoryAllowedNotes(prev => [...prev, note]);
-                                                } else if (action === 'remove' && memoryAllowedNotes.includes(note)) {
-                                                    setMemoryAllowedNotes(prev => prev.filter(n => n !== note));
+                                                // Immediate update
+                                                if (action === 'add') setMemoryAllowedNotes(prev => [...prev, note]);
+                                                else setMemoryAllowedNotes(prev => prev.filter(n => n !== note));
+                                            }}
+                                            onPointerEnter={() => {
+                                                const { active, type, action } = dragSelectRef.current;
+                                                if (active && type === 'note') {
+                                                    if (action === 'add' && !memoryAllowedNotes.includes(note)) {
+                                                        setMemoryAllowedNotes(prev => [...prev, note]);
+                                                    } else if (action === 'remove' && memoryAllowedNotes.includes(note)) {
+                                                        setMemoryAllowedNotes(prev => prev.filter(n => n !== note));
+                                                    }
                                                 }
-                                            }
-                                        }}
-                                        className={`
+                                            }}
+                                            className={`
                                             w-7 h-7 sm:w-10 sm:h-10 rounded-md font-bold text-[0.6rem] sm:text-sm transition-all
                                             flex items-center justify-center border cursor-pointer select-none touch-none
                                             ${memoryAllowedNotes.includes(note)
-                                                ? 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/50 scale-105 z-10'
-                                                : 'bg-slate-800 text-slate-400 border-slate-600 hover:border-slate-400 hover:text-white'}
+                                                    ? 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/50 scale-105 z-10'
+                                                    : 'bg-slate-800 text-slate-400 border-slate-600 hover:border-slate-400 hover:text-white'}
                                         `}
-                                    >
-                                        {note}
-                                    </button>
-                                ))}
+                                        >
+                                            {note}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     <div className="flex justify-center flex-col items-center gap-[5px] sm:gap-4 mt-[5px] sm:mt-4">
 
                         {/* ROW 2: STRINGS SELECTOR */}
-                        <div className="flex flex-col items-center gap-1 sm:gap-2 w-full max-w-3xl justify-center">
-                            {/* LABEL */}
-                            <div className="text-[0.6rem] sm:text-xs font-bold text-slate-500 w-full text-center shrink-0">STRINGS</div>
+                        {!memoryGameActive && (
+                            <div className="flex flex-col items-center gap-1 sm:gap-2 w-full max-w-3xl justify-center">
+                                {/* LABEL */}
+                                <div className="text-[0.6rem] sm:text-xs font-bold text-slate-500 w-full text-center shrink-0">STRINGS</div>
 
-                            <div className="grid grid-cols-6 gap-0.5 sm:gap-1 w-auto min-w-[180px] max-w-[220px] sm:min-w-[300px] sm:max-w-[400px]">
-                                {[5, 4, 3, 2, 1, 0].map((stringIndex, i) => (
-                                    <button
-                                        key={stringIndex}
-                                        onPointerDown={(e) => {
-                                            e.preventDefault();
-                                            e.currentTarget.releasePointerCapture(e.pointerId);
-                                            const isActive = memoryAllowedStrings.includes(stringIndex);
-                                            const action = isActive ? 'remove' : 'add';
-                                            dragSelectRef.current = { active: true, type: 'string', action };
+                                <div className="grid grid-cols-6 gap-0.5 sm:gap-1 w-auto min-w-[180px] max-w-[220px] sm:min-w-[300px] sm:max-w-[400px]">
+                                    {[5, 4, 3, 2, 1, 0].map((stringIndex, i) => (
+                                        <button
+                                            key={stringIndex}
+                                            onPointerDown={(e) => {
+                                                e.preventDefault();
+                                                e.currentTarget.releasePointerCapture(e.pointerId);
+                                                const isActive = memoryAllowedStrings.includes(stringIndex);
+                                                const action = isActive ? 'remove' : 'add';
+                                                dragSelectRef.current = { active: true, type: 'string', action };
 
-                                            // Immediate update
-                                            if (action === 'add') setMemoryAllowedStrings(prev => [...prev, stringIndex]);
-                                            else setMemoryAllowedStrings(prev => prev.filter(s => s !== stringIndex));
-                                        }}
-                                        onPointerEnter={() => {
-                                            const { active, type, action } = dragSelectRef.current;
-                                            if (active && type === 'string') {
-                                                if (action === 'add' && !memoryAllowedStrings.includes(stringIndex)) {
-                                                    setMemoryAllowedStrings(prev => [...prev, stringIndex]);
-                                                } else if (action === 'remove' && memoryAllowedStrings.includes(stringIndex)) {
-                                                    setMemoryAllowedStrings(prev => prev.filter(s => s !== stringIndex));
+                                                // Immediate update
+                                                if (action === 'add') setMemoryAllowedStrings(prev => [...prev, stringIndex]);
+                                                else setMemoryAllowedStrings(prev => prev.filter(s => s !== stringIndex));
+                                            }}
+                                            onPointerEnter={() => {
+                                                const { active, type, action } = dragSelectRef.current;
+                                                if (active && type === 'string') {
+                                                    if (action === 'add' && !memoryAllowedStrings.includes(stringIndex)) {
+                                                        setMemoryAllowedStrings(prev => [...prev, stringIndex]);
+                                                    } else if (action === 'remove' && memoryAllowedStrings.includes(stringIndex)) {
+                                                        setMemoryAllowedStrings(prev => prev.filter(s => s !== stringIndex));
+                                                    }
                                                 }
-                                            }
-                                        }}
-                                        className={`
+                                            }}
+                                            className={`
                                             h-7 w-full sm:h-10 rounded-md font-bold text-[0.6rem] sm:text-sm transition-all
                                             flex items-center justify-center border cursor-pointer select-none touch-none
                                         `}
-                                        style={{
-                                            backgroundColor: memoryAllowedStrings.includes(stringIndex) ? '#3b82f6' : '#1e293b',
-                                            color: memoryAllowedStrings.includes(stringIndex) ? '#fff' : '#94a3b8',
-                                            borderColor: memoryAllowedStrings.includes(stringIndex) ? '#3b82f6' : '#475569',
-                                            opacity: memoryAllowedStrings.includes(stringIndex) ? 1 : 0.5,
-                                            gridColumn: i + 1,
-                                            gridRow: 1
-                                        }}
-                                    >
-                                        {6 - stringIndex}
-                                    </button>
-                                ))}
+                                            style={{
+                                                backgroundColor: memoryAllowedStrings.includes(stringIndex) ? '#3b82f6' : '#1e293b',
+                                                color: memoryAllowedStrings.includes(stringIndex) ? '#fff' : '#94a3b8',
+                                                borderColor: memoryAllowedStrings.includes(stringIndex) ? '#3b82f6' : '#475569',
+                                                opacity: memoryAllowedStrings.includes(stringIndex) ? 1 : 0.5,
+                                                gridColumn: i + 1,
+                                                gridRow: 1
+                                            }}
+                                        >
+                                            {6 - stringIndex}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* ROW 3: CONTROLS */}
                         <div className="mt-6 flex gap-4 items-center">
@@ -1622,10 +1638,7 @@ export default function Fretboard() {
                                 </button>
                             ) : (
                                 <div className="flex gap-4 items-center">
-                                    <div className="flex flex-col items-center">
-                                        <span className="text-[0.6rem] sm:text-xs text-slate-400 font-bold tracking-widest">FOUND</span>
-                                        <span className="text-xl sm:text-2xl font-black text-amber-400">{score}</span>
-                                    </div>
+
                                     <button
                                         onClick={() => stopMemoryGame(false)}
                                         className="h-9 px-4 sm:h-12 sm:px-6 rounded-lg font-bold text-xs sm:text-base bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 transition-all"
