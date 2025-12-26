@@ -1329,13 +1329,13 @@ export default function Fretboard() {
 
                     {/* ROW 1: ROOT (CIRCLE OF FIFTHS) */}
                     <div className="flex flex-col gap-1 items-center w-full">
-                        <div className="flex flex-wrap justify-center gap-0.5 w-full max-w-sm">
+                        <div className="flex flex-wrap justify-center gap-0.5 sm:gap-2 w-full max-w-2xl">
                             {['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'].map(note => (
                                 <button
                                     key={note}
                                     onClick={() => setDesignerRoot(note)}
                                     className={`
-                                        w-[1.4rem] h-7 rounded-md font-bold text-[0.55rem] transition-all
+                                        w-[1.4rem] h-7 sm:w-10 sm:h-10 rounded-md font-bold text-[0.55rem] sm:text-sm transition-all
                                         flex items-center justify-center border
                                         ${designerRoot === note
                                             ? 'bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-500/50 scale-105 z-10'
@@ -1348,15 +1348,15 @@ export default function Fretboard() {
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap', marginTop: '5px' }}>
+                    <div className="flex justify-center gap-[10px] sm:gap-8 flex-wrap mt-[5px] sm:mt-4">
 
                         {/* ROW 2: TYPE */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', gap: '2px' }}>
+                            <div className="flex gap-0.5 sm:gap-2">
                                 <button
                                     onClick={() => setDesignerType('major')}
                                     className={`
-                                        h-7 px-2 rounded-md font-bold text-[0.6rem] transition-all
+                                        h-7 px-2 sm:h-10 sm:px-4 rounded-md font-bold text-[0.6rem] sm:text-sm transition-all
                                         flex items-center justify-center border
                                     `}
                                     style={{
@@ -1371,7 +1371,7 @@ export default function Fretboard() {
                                 <button
                                     onClick={() => setDesignerType('minor')}
                                     className={`
-                                        h-7 px-2 rounded-md font-bold text-[0.6rem] transition-all
+                                        h-7 px-2 sm:h-10 sm:px-4 rounded-md font-bold text-[0.6rem] sm:text-sm transition-all
                                         flex items-center justify-center border
                                     `}
                                     style={{
@@ -1388,7 +1388,7 @@ export default function Fretboard() {
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'center' }}>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '2px', width: 'auto', minWidth: '180px', maxWidth: '220px' }}>
+                            <div className="grid grid-cols-6 gap-0.5 sm:gap-1 w-auto min-w-[180px] max-w-[220px] sm:min-w-[300px] sm:max-w-[400px]">
                                 {/* Row 1: Keys */}
                                 {[5, 4, 3, 2, 1, 0].map((stringIndex, i) => (
                                     <button
@@ -1399,7 +1399,7 @@ export default function Fretboard() {
                                             );
                                         }}
                                         className={`
-                                            h-7 w-full rounded-md font-bold text-[0.6rem] transition-all
+                                            h-7 w-full sm:h-10 rounded-md font-bold text-[0.6rem] sm:text-sm transition-all
                                             flex items-center justify-center border
                                         `}
                                         style={{
@@ -1431,7 +1431,7 @@ export default function Fretboard() {
                                             key={set.label}
                                             onClick={() => setDesignerStrings(set.strings)}
                                             className={`
-                                                h-7 w-full rounded-md font-bold text-[0.5rem] transition-all
+                                                h-7 w-full sm:h-10 rounded-md font-bold text-[0.5rem] sm:text-[0.7rem] transition-all
                                                 flex items-center justify-center border
                                             `}
                                             style={{
