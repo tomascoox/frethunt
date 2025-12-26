@@ -124,6 +124,7 @@ export default function Fretboard() {
     const [memoryGameOver, setMemoryGameOver] = useState(false);
     const [sessionXP, setSessionXP] = useState(0); // Track XP gained in this session
     const [memoryTarget, setMemoryTarget] = useState(null); // { s, f, note: 'C#' }
+    const [pieMenuPosition, setPieMenuPosition] = useState(null);
     const [memoryAllowedNotes, setMemoryAllowedNotes] = useState(NOTES); // Default all
     const [memoryAllowedStrings, setMemoryAllowedStrings] = useState([0, 1, 2, 3, 4, 5]); // Default all
     const [questionsLeft, setQuestionsLeft] = useState(10); // 10 Questions per round
@@ -158,6 +159,39 @@ export default function Fretboard() {
             window.removeEventListener('pointercancel', handleUp);
         };
     }, []);
+
+    // Position Tracker for Memory Game Pie Menu
+    useEffect(() => {
+        if (!memoryTarget) {
+            setPieMenuPosition(null);
+            return;
+        }
+
+        const updatePos = () => {
+            const el = document.getElementById(`note-cell-${memoryTarget.s}-${memoryTarget.f}`);
+            if (el) {
+                const rect = el.getBoundingClientRect();
+                setPieMenuPosition({
+                    x: rect.left + rect.width / 2,
+                    y: rect.top + rect.height / 2
+                });
+            }
+        };
+
+        // Initial update
+        // Small timeout to ensure DOM is rendered with ID
+        const t = setTimeout(updatePos, 0);
+
+        // Update on scroll/resize
+        window.addEventListener('scroll', updatePos, true);
+        window.addEventListener('resize', updatePos);
+
+        return () => {
+            clearTimeout(t);
+            window.removeEventListener('scroll', updatePos, true);
+            window.removeEventListener('resize', updatePos);
+        };
+    }, [memoryTarget, fretCount]);
 
     // GLOBAL AUDIO UNLOCKER (Aggressive)
     useEffect(() => {
@@ -1958,6 +1992,7 @@ export default function Fretboard() {
                                                     {/* LAYER 1: NOTE BUTTON */}
                                                     <div
                                                         className={`note-cell ${isVisible ? 'visible' : ''}`}
+                                                        id={`note-cell-${stringIndex}-${fretIndex}`}
                                                         data-string={stringIndex}
                                                         data-fret={fretIndex}
                                                         style={{
@@ -2016,81 +2051,7 @@ export default function Fretboard() {
                                                     </div>
 
                                                     {/* LAYER 2: PIE MENU (Overlay on top, independent sibling) */}
-                                                    {isMemoryTarget && (
-                                                        <div style={{
-                                                            gridRow: visualRow,
-                                                            gridColumn: fretIndex + 1,
-                                                            position: 'relative',
-                                                            pointerEvents: 'none', // Allow clicks to pass through empty space
-                                                            zIndex: 50
-                                                        }}>
-                                                            <div style={{
-                                                                position: 'absolute', top: '50%', left: '50%', width: 0, height: 0,
-                                                                overflow: 'visible'
-                                                            }}>
-                                                                {/* Glow effect background */}
-                                                                <div style={{
-                                                                    position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                                                                    width: '140px', height: '140px', borderRadius: '50%',
-                                                                    background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, rgba(15, 23, 42, 0) 70%)',
-                                                                }} />
 
-                                                                {/* Render Slices */}
-                                                                {['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'].map((n, i) => {
-                                                                    if (!memoryAllowedNotes.includes(n)) return null;
-
-                                                                    // Logik: A at Top (-90 deg). Each step 30 deg.
-                                                                    const angle = (i * 30) - 90;
-                                                                    const rad = angle * (Math.PI / 180);
-                                                                    const radius = 55; // Distance from center note
-                                                                    const x = Math.cos(rad) * radius;
-                                                                    const y = Math.sin(rad) * radius;
-
-                                                                    return (
-                                                                        <button
-                                                                            key={`pie-${n}`}
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                handleMemoryGuess(n, e);
-                                                                            }}
-                                                                            style={{
-                                                                                position: 'absolute',
-                                                                                left: `${x}px`, top: `${y}px`,
-                                                                                transform: 'translate(-50%, -50%)',
-                                                                                width: '34px', height: '34px',
-                                                                                borderRadius: '50%',
-                                                                                border: '2px solid rgba(59, 130, 246, 0.5)',
-                                                                                backgroundColor: '#0f172a',
-                                                                                color: '#f8fafc',
-                                                                                fontWeight: 'bold',
-                                                                                fontSize: '0.85rem',
-                                                                                boxShadow: '0 4px 6px rgba(0,0,0,0.5)',
-                                                                                cursor: 'pointer',
-                                                                                pointerEvents: 'auto', // Button accepts clicks
-                                                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                                transition: 'transform 0.1s',
-                                                                                zIndex: 101,
-                                                                                animation: 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'
-                                                                            }}
-                                                                            onMouseEnter={e => {
-                                                                                e.target.style.transform = 'translate(-50%, -50%) scale(1.2)';
-                                                                                e.target.style.borderColor = '#60a5fa';
-                                                                                e.target.style.backgroundColor = '#1e293b';
-                                                                            }}
-                                                                            onMouseLeave={e => {
-                                                                                e.target.style.transform = 'translate(-50%, -50%) scale(1)';
-                                                                                e.target.style.borderColor = 'rgba(59, 130, 246, 0.5)';
-                                                                                e.target.style.backgroundColor = '#0f172a';
-                                                                            }}
-                                                                        >
-                                                                            {n}
-                                                                        </button>
-                                                                    );
-                                                                })}
-                                                                <style>{`@keyframes popIn { from { transform: translate(-50%, -50%) scale(0); opacity: 0; } to { opacity: 1; } }`}</style>
-                                                            </div>
-                                                        </div>
-                                                    )}
                                                 </React.Fragment>
                                             );
                                         });
@@ -2119,6 +2080,145 @@ export default function Fretboard() {
             </div>
 
 
-        </div >
+            {/* OVERLAYS at the end to avoid z-index/clipping issues */}
+            <PieMenuOverlay
+                position={pieMenuPosition}
+                onGuess={handleMemoryGuess}
+                allowedNotes={memoryAllowedNotes}
+                visible={!!pieMenuPosition && activeGameMode === 'memory' && memoryGameActive}
+            />
+
+        </div>
     );
 }
+
+const PieMenuOverlay = ({ position, onGuess, allowedNotes, visible }) => {
+    if (!visible || !position) return null;
+
+    const notes = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
+    const radius = 110; // Outer radius
+    const innerRadius = 45; // Donut hole
+
+    // Create slices
+    // A is at Top (-90 deg).
+    const sliceAngle = 360 / 12;
+
+    return (
+        <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            pointerEvents: 'none',
+            zIndex: 9999,
+            overflow: 'hidden'
+        }}>
+            <div style={{
+                position: 'absolute',
+                top: position.y,
+                left: position.x,
+                transform: 'translate(-50%, -50%)',
+                width: radius * 2,
+                height: radius * 2,
+                pointerEvents: 'auto'
+            }}>
+                <svg width="100%" height="100%" viewBox="-100 -100 200 200" style={{ overflow: 'visible' }}>
+                    <filter id="glow">
+                        <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+                        <feMerge>
+                            <feMergeNode in="coloredBlur" />
+                            <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                    </filter>
+
+                    {notes.map((n, i) => {
+                        const isAllowed = allowedNotes.includes(n);
+
+                        // Calculate wedge path
+                        const startAngle = (i * sliceAngle) - 90 - (sliceAngle / 2);
+                        const endAngle = startAngle + sliceAngle;
+
+                        // Convert to radians
+                        const startRad = (startAngle * Math.PI) / 180;
+                        const endRad = (endAngle * Math.PI) / 180;
+
+                        // Coordinates
+                        const x1 = Math.cos(startRad) * radius;
+                        const y1 = Math.sin(startRad) * radius;
+                        const x2 = Math.cos(endRad) * radius;
+                        const y2 = Math.sin(endRad) * radius;
+
+                        const x1_in = Math.cos(startRad) * innerRadius;
+                        const y1_in = Math.sin(startRad) * innerRadius;
+                        const x2_in = Math.cos(endRad) * innerRadius;
+                        const y2_in = Math.sin(endRad) * innerRadius;
+
+                        // SVG Path Command
+                        const pathData = [
+                            `M ${x1_in} ${y1_in}`,
+                            `L ${x1} ${y1}`,
+                            `A ${radius} ${radius} 0 0 1 ${x2} ${y2}`,
+                            `L ${x2_in} ${y2_in}`,
+                            `A ${innerRadius} ${innerRadius} 0 0 0 ${x1_in} ${y1_in}`,
+                            'Z'
+                        ].join(' ');
+
+                        // Label Position (Center of wedge)
+                        const midAngle = startAngle + (sliceAngle / 2);
+                        const midRad = (midAngle * Math.PI) / 180;
+                        const textRadius = (radius + innerRadius) / 2;
+                        const tx = Math.cos(midRad) * textRadius;
+                        const ty = Math.sin(midRad) * textRadius;
+
+                        return (
+                            <g
+                                key={n}
+                                onClick={(e) => {
+                                    if (isAllowed) {
+                                        e.stopPropagation();
+                                        onGuess(n, e);
+                                    }
+                                }}
+                                style={{
+                                    cursor: isAllowed ? 'pointer' : 'default',
+                                    opacity: isAllowed ? 1 : 0.3,
+                                    transition: 'all 0.2s ease',
+                                    transformOrigin: '0 0'
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (isAllowed) e.currentTarget.style.transform = 'scale(1.1)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (isAllowed) e.currentTarget.style.transform = 'scale(1)';
+                                }}
+                            >
+                                <path
+                                    d={pathData}
+                                    fill={isAllowed ? '#3b82f6' : '#1e293b'}
+                                    stroke="#1e293b"
+                                    strokeWidth="1"
+                                    className="hover:brightness-110"
+                                />
+                                <text
+                                    x={tx}
+                                    y={ty}
+                                    fill="#fff"
+                                    fontSize="10"
+                                    fontWeight="bold"
+                                    textAnchor="middle"
+                                    alignmentBaseline="middle"
+                                    pointerEvents="none"
+                                >
+                                    {n}
+                                </text>
+                            </g>
+                        );
+                    })}
+                </svg>
+            </div>
+        </div>
+    );
+};
+
+
