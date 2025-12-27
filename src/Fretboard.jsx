@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import * as Tone from 'tone';
 import confetti from 'canvas-confetti';
 import './Fretboard.css';
@@ -15,8 +16,9 @@ const FRET_WIDTH_RATIOS = [
 ];
 
 // Inlay Markers (Standard 3, 5, 7, 9, 12, 15, 17, 19, 21)
-const MARKERS = [3, 5, 7, 9, 15, 17, 19, 21]; // 1-indexed frets
-const DOUBLE_MARKERS = [12, 24]; // 1-indexed frets
+// Inlay Markers (Standard 3, 5, 7, 9, 12, 15, 17, 19, 22)
+const MARKERS = [3, 5, 7, 9, 15, 17, 19]; // 1-indexed frets
+const DOUBLE_MARKERS = [12, 22, 24]; // 1-indexed frets (22 is double per user request)
 
 // Helper to get note name (e.g., 'C', 'F#')
 const getNoteAt = (stringIndex, fretIndex) => {
@@ -87,7 +89,12 @@ const TRIAD_SHAPES = {
 };
 
 
-export default function Fretboard() {
+export default function Fretboard({
+    activeGameMode, setActiveGameMode,
+    proMode,
+    fretCount,
+    totalXP, setTotalXP
+}) {
     // DETECT MOBILE FOR EVEN FRETS
     const [isMobile, setIsMobile] = useState(false);
     useEffect(() => {
@@ -97,10 +104,7 @@ export default function Fretboard() {
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    const [showMenu, setShowMenu] = useState(false); // HAMBURGER MENU STATE
-
-    // --- GLOBAL SETTINGS ---
-    const [fretCount, setFretCount] = useState(13); // Default requested by user
+    // const [fretCount, setFretCount] = useState(13); // Props now
 
 
     const [revealed, setRevealed] = useState({});
@@ -117,14 +121,14 @@ export default function Fretboard() {
     const [timerProgress, setTimerProgress] = useState(0);
     const [gameFeedback, setGameFeedback] = useState({});
     const [score, setScore] = useState(0);
-    const [activeGameMode, setActiveGameMode] = useState(null); // null = Explorer, 'string-walker' = The Game
+    // const [activeGameMode, setActiveGameMode] = useState(null); // Props now
 
     // MEMORY GAME STATE
     const [memoryGameActive, setMemoryGameActive] = useState(false);
     const [memoryGameOver, setMemoryGameOver] = useState(false);
     const [sessionXP, setSessionXP] = useState(0); // Track XP gained in this session
     const [memoryTarget, setMemoryTarget] = useState(null); // { s, f, note: 'C#' }
-    const [pieMenuPosition, setPieMenuPosition] = useState(null);
+    // const [pieMenuPosition, setPieMenuPosition] = useState(null); // REMOVED: PieMenu tracks itself now
     const [memoryAllowedNotes, setMemoryAllowedNotes] = useState(NOTES); // Default all
     const [memoryAllowedStrings, setMemoryAllowedStrings] = useState([0, 1, 2, 3, 4, 5]); // Default all
     const [questionsLeft, setQuestionsLeft] = useState(10); // 10 Questions per round
@@ -135,14 +139,24 @@ export default function Fretboard() {
     const [designerStrings, setDesignerStrings] = useState([0, 1, 2, 3, 4, 5]); // All strings active initially
 
     // PROGRESSION & SETTINGS
-    const [proMode, setProMode] = useState(() => localStorage.getItem('fretboardProMode') === 'true');
-    const [showSettings, setShowSettings] = useState(false);
-    useEffect(() => { localStorage.setItem('fretboardProMode', proMode); }, [proMode]);
+    // const [proMode, setProMode] = useState... // Props now
+    // const [showSettings, setShowSettings] = useState(false); // Props in Layout
+    // useEffect(() => { localStorage.setItem('fretboardProMode', proMode); }, [proMode]); // App handles this
+
+    // FORCE BODY NO-SCROLL (HORIZONTAL) to allow Full Bleed
+    useEffect(() => {
+        const originalOverflowX = document.body.style.overflowX;
+        document.body.style.overflowX = 'hidden';
+        return () => {
+            document.body.style.overflowX = originalOverflowX;
+        };
+    }, []);
 
     // REF FOR DRAG-TO-PLAY INTERACTION
     const isPointerDown = useRef(false);
     const lastPlayedRef = useRef(null);
     const dragSelectRef = useRef({ active: false, type: null, action: null });
+    const scrollAreaRef = useRef(null); // Ref for Fretboard Scroll Area
 
     // GLOBAL POINTER UP (RESET DRAG)
     useEffect(() => {
@@ -160,38 +174,26 @@ export default function Fretboard() {
         };
     }, []);
 
-    // Position Tracker for Memory Game Pie Menu
+    // Auto-Scroll for Memory Game
     useEffect(() => {
-        if (!memoryTarget) {
-            setPieMenuPosition(null);
-            return;
-        }
+        if (!memoryTarget) return;
 
-        const updatePos = () => {
-            const el = document.getElementById(`note-cell-${memoryTarget.s}-${memoryTarget.f}`);
-            if (el) {
-                const rect = el.getBoundingClientRect();
-                setPieMenuPosition({
-                    x: rect.left + rect.width / 2,
-                    y: rect.top + rect.height / 2
-                });
+        if (memoryTarget.f === 0) {
+            // If target is Open String (Nut), reset board scroll to start (Fret 1)
+            // This ensures context is visible next to the Nut.
+            if (scrollAreaRef.current) {
+                scrollAreaRef.current.scrollTo({ left: 0, behavior: 'smooth' });
             }
-        };
-
-        // Initial update
-        // Small timeout to ensure DOM is rendered with ID
-        const t = setTimeout(updatePos, 0);
-
-        // Update on scroll/resize
-        window.addEventListener('scroll', updatePos, true);
-        window.addEventListener('resize', updatePos);
-
-        return () => {
-            clearTimeout(t);
-            window.removeEventListener('scroll', updatePos, true);
-            window.removeEventListener('resize', updatePos);
-        };
-    }, [memoryTarget, fretCount]);
+        } else {
+            // Auto-Scroll to center the target note on the board
+            requestAnimationFrame(() => {
+                const el = document.getElementById(`note-cell-${memoryTarget.s}-${memoryTarget.f}`);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }
+            });
+        }
+    }, [memoryTarget]);
 
     // GLOBAL AUDIO UNLOCKER (Aggressive)
     useEffect(() => {
@@ -823,20 +825,18 @@ export default function Fretboard() {
     };
 
     const handleNoteInteraction = (stringIndex, fretIndex, note) => {
-        if (activeGameMode === 'memory' && memoryGameActive) {
-            setMemoryTarget({ s: stringIndex, f: fretIndex, note });
-        } else if (activeGameMode === 'triad-hunt') {
+        if (activeGameMode === 'triad-hunt') {
             checkTriadClick(stringIndex, fretIndex);
         } else if (practiceActive) {
             handlePracticeClick(stringIndex, fretIndex);
         } else {
-            // Explorer Mode
+            // Explorer Mode AND Memory Mode (Visual feedback only)
             toggleNote(stringIndex, fretIndex);
         }
     };
 
     const toggleNote = (stringIndex, fretIndex) => {
-        if (activeGameMode === 'memory' && memoryGameActive) return; // Disable fretboard clicking ONLY during active Drill
+        // if (activeGameMode === 'memory' && memoryGameActive) return; // ALLOW PLAYING DURING MEMORY GAME
 
         if (triadGameActive) {
             checkTriadClick(stringIndex, fretIndex);
@@ -883,21 +883,21 @@ export default function Fretboard() {
     const getFeedback = (s, f) => gameFeedback[`${s}-${f}`];
 
     // Generate Inlays using Grid positioning
-    const renderInlays = () => {
+    const renderInlays = (maxFrets = 22) => {
         return [...MARKERS, ...DOUBLE_MARKERS]
-            .filter(fret => fret <= fretCount)
+            .filter(fret => fret <= maxFrets)
             .map(fret => {
-                const colIndex = fret + 1; // Fret N = Grid Col N+1
+                const colIndex = fret; // Fret N = Grid Col N (Since Col 1 is Fret 1)
 
                 if (DOUBLE_MARKERS.includes(fret)) {
                     return (
                         <div key={`inlay-${fret}`} style={{
                             gridColumn: colIndex,
-                            gridRow: '1 / -1',
+                            gridRow: '1 / 7', // SPAN ONLY STRING ROWS (1-6) to maintain vertical centering
                             display: 'grid',
                             gridTemplateRows: 'repeat(6, 1fr)',
-                            justifyItems: 'center',
-                            alignItems: 'center',
+                            justifyItems: 'center', // Center horizontally in the fret
+                            alignItems: 'center',   // Center vertically in the grid
                             height: '100%',
                             zIndex: 0,
                             pointerEvents: 'none'
@@ -916,7 +916,7 @@ export default function Fretboard() {
                     return (
                         <div key={`inlay-${fret}`} className="marker single" style={{
                             gridColumn: colIndex,
-                            gridRow: '1 / -1',
+                            gridRow: '1 / 7', // SPAN ONLY STRING ROWS (1-6)
                             position: 'relative',
                             top: '50%',
                             transform: 'translateY(-50%)',
@@ -932,162 +932,30 @@ export default function Fretboard() {
     const hideAll = () => setRevealed({});
 
     return (
-        <div className="fretboard-wrapper" style={{ marginTop: '0' }}>
-            {/* SETTINGS MODAL */}
-            {showSettings && (
-                <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(5px)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    <div style={{ background: '#1e293b', padding: '40px', borderRadius: '20px', border: '1px solid #475569', width: '400px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                            <h2 style={{ margin: 0, fontSize: '1.8rem', color: '#fff' }}>GAME SETTINGS</h2>
-                            <button onClick={() => setShowSettings(false)} className="btn" style={{ fontSize: '1.5rem', background: 'transparent', border: 'none', color: '#94a3b8' }}>✕</button>
-                        </div>
+        <div className="fretboard-wrapper" style={{
+            marginTop: '0',
+            width: '100vw',
+            marginLeft: '50%',
+            transform: 'translateX(-50%)', // Centered Full Width Breakout
+            maxWidth: 'none',
+            alignItems: 'stretch',
+            padding: '0',
+            overflowX: 'hidden',
+            boxSizing: 'border-box'
+        }}>
+            <style>{`
+                /* Hide scrollbar for Chrome, Safari and Opera */
+                .no-scrollbar::-webkit-scrollbar {
+                    display: none;
+                }
+                /* Hide scrollbar for IE, Edge and Firefox */
+                .no-scrollbar {
+                    -ms-overflow-style: none;  /* IE and Edge */
+                    scrollbar-width: none;  /* Firefox */
+                }
+            `}</style>
 
-                        {/* PRO MODE TOGGLE */}
-                        <div style={{ marginBottom: '20px', padding: '20px', background: proMode ? 'rgba(34, 197, 94, 0.1)' : '#0f172a', borderRadius: '10px', border: proMode ? '1px solid #22c55e' : '1px solid #334155', transition: 'all 0.3s' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                                <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: proMode ? '#22c55e' : '#fff' }}>PRO MODE (UNLOCK ALL)</span>
-                                <input
-                                    type="checkbox"
-                                    checked={proMode}
-                                    onChange={(e) => setProMode(e.target.checked)}
-                                    style={{ transform: 'scale(1.5)', accentColor: '#22c55e' }}
-                                />
-                            </div>
-                            <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: 0 }}>
-                                {proMode ? "All restrictions bypassed." : "Features unlock with XP."}
-                            </p>
-                        </div>
-
-
-                        {/* FRET COUNT SETTING */}
-                        <div style={{ marginBottom: '20px', padding: '20px', background: '#0f172a', borderRadius: '10px', border: '1px solid #334155' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                                <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#fff' }}>FRET COUNT: <span style={{ color: '#3b82f6' }}>{fretCount}</span></span>
-                            </div>
-                            <input
-                                type="range"
-                                min="12"
-                                max="24"
-                                value={fretCount}
-                                onChange={(e) => setFretCount(parseInt(e.target.value))}
-                                style={{ width: '100%', accentColor: '#3b82f6', height: '6px', borderRadius: '3px' }}
-                            />
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5px', color: '#64748b', fontSize: '0.8rem' }}>
-                                <span>12</span>
-                                <span>24</span>
-                            </div>
-                        </div>
-
-                        {/* DANGER ZONE */}
-                        <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '1px solid #334155' }}>
-                            <button
-                                className="btn"
-                                onClick={() => { if (confirm('Reset all XP and progress?')) { setTotalXP(0); localStorage.setItem('fretboardXP', 0); setShowSettings(false); } }}
-                                style={{ width: '100%', backgroundColor: '#ef4444', color: 'white', padding: '12px', fontSize: '0.9rem' }}
-                            >
-                                RESET PROGRESS (XP: {totalXP})
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* GLOBAL NAVBAR */}
-            <div style={{
-                position: 'fixed',
-                top: 0, left: 0, right: 0,
-                height: '70px',
-                background: 'rgba(15, 23, 42, 0.95)',
-                borderBottom: '1px solid #334155',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '0 20px',
-                zIndex: 1000,
-                backdropFilter: 'blur(10px)',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
-            }}>
-                {/* LEFT: HAMBURGER + BRAND */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <button
-                        onClick={() => setShowMenu(!showMenu)}
-                        style={{
-                            background: 'transparent', border: 'none', color: '#f8fafc',
-                            fontSize: '1.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center'
-                        }}
-                    >
-                        ☰
-                    </button>
-
-                    <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '900', color: '#f8fafc', letterSpacing: '1px', fontStyle: 'italic' }}>
-                        Guitar <span style={{ color: '#3b82f6' }}>Tools</span>
-                    </h1>
-                </div>
-
-                {/* RIGHT: SETTINGS */}
-                <div style={{ display: 'flex', gap: '30px', alignItems: 'center' }}>
-                    <button
-                        onClick={() => setShowSettings(true)}
-                        style={{ background: 'transparent', border: 'none', fontSize: '1.8rem', cursor: 'pointer', filter: 'grayscale(100%) opacity(0.5)', transition: 'all 0.2s' }}
-                        onMouseEnter={e => e.target.style.filter = 'none'}
-                        onMouseLeave={e => e.target.style.filter = 'grayscale(100%) opacity(0.5)'}
-                        title="Settings"
-                    >
-                        ⚙️
-                    </button>
-                </div>
-            </div>
-
-            {/* SPACER FOR FIXED NAVBAR */}
-            <div style={{ height: '90px' }} />
-
-            {/* HAMBURGER MENU DRAWER */}
-            {showMenu && (
-                <div style={{
-                    position: 'fixed', top: '70px', left: 0, width: '280px', bottom: 0,
-                    background: '#1e293b', borderRight: '1px solid #334155',
-                    zIndex: 1999, padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px',
-                    boxShadow: '10px 0 30px rgba(0,0,0,0.5)',
-                    animation: 'slideIn 0.2s ease-out'
-                }}>
-                    <button
-                        onClick={() => { switchGameMode('chord-designer'); setShowMenu(false); }}
-                        className={`w-full text-left px-4 py-3 rounded-lg font-bold transition-all border ${activeGameMode === 'chord-designer' ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'}`}
-                    >
-                        TRIADS
-                    </button>
-
-                    <button
-                        onClick={() => { switchGameMode('string-walker'); setShowMenu(false); }}
-                        className={`w-full text-left px-4 py-3 rounded-lg font-bold transition-all border ${activeGameMode === 'string-walker' ? 'bg-teal-500 text-slate-900 border-teal-500' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'}`}
-                    >
-                        STRING WALKER
-                    </button>
-
-                    <button
-                        onClick={() => { switchGameMode('triad-hunt'); setShowMenu(false); }}
-                        className={`w-full text-left px-4 py-3 rounded-lg font-bold transition-all border ${activeGameMode === 'triad-hunt' ? 'bg-violet-500 text-white border-violet-500' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'}`}
-                    >
-                        TRIAD HUNT
-                    </button>
-
-                    <button
-                        onClick={() => { switchGameMode('memory'); setShowMenu(false); }}
-                        className={`w-full text-left px-4 py-3 rounded-lg font-bold transition-all border ${activeGameMode === 'memory' ? 'bg-blue-500 text-white border-blue-500' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'}`}
-                    >
-                        NOTE HUNT
-                    </button>
-
-                    <style>{`@keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
-                </div>
-            )}
-
-
-            {/* CLICK OUTSIDE TO CLOSE - Simple Overlay */}
-            {showMenu && (
-                <div
-                    onClick={() => setShowMenu(false)}
-                    style={{ position: 'fixed', top: '60px', left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1998 }}
-                />
-            )}
+            {/* UI ELEMENTS REMOVED (Moved to Layout.jsx) */}
 
             {/* CHORD DESIGNER HUD */}
             {activeGameMode === 'chord-designer' && (
@@ -1513,154 +1381,157 @@ export default function Fretboard() {
 
             {/* MEMORY GAME HUD */}
             {/* MEMORY GAME HUD */}
-            {activeGameMode === 'memory' && (
-                <div className="game-hud" style={{
-                    width: '100%',
-                    flexDirection: 'column',
-                    gap: '8px',
-                    marginBottom: memoryGameActive ? '130px' : '15px',
-                    background: memoryGameActive ? 'transparent' : 'rgba(30, 41, 59, 0.5)',
-                    padding: '10px',
-                    borderRadius: '12px',
-                    border: memoryGameActive ? 'none' : '1px solid #3b82f6'
-                }}>
+            {activeGameMode === 'memory' && !memoryGameActive && (
+                <div className="game-hud" style={{ width: '100%', flexDirection: 'column', gap: '8px', marginBottom: '15px', background: 'rgba(30, 41, 59, 0.5)', padding: '10px', borderRadius: '12px', border: '1px solid #3b82f6' }}>
 
                     {/* ROW 1: NOTES SELECTOR */}
-                    {!memoryGameActive && (
-                        <div className="flex flex-col gap-1 items-center w-full">
-                            <div className="flex flex-col items-center gap-1 sm:gap-2 w-full max-w-3xl justify-center">
-                                {/* LABEL */}
-                                <div className="text-[0.6rem] sm:text-xs font-bold text-slate-500 w-full text-center shrink-0">NOTES</div>
+                    <div className="flex flex-col gap-1 items-center w-full">
+                        <div className="flex flex-col items-center gap-1 sm:gap-2 w-full max-w-3xl justify-center">
+                            {/* LABEL */}
+                            <div className="text-[0.6rem] sm:text-xs font-bold text-slate-500 w-full text-center shrink-0">NOTES</div>
 
-                                {/* BUTTONS */}
-                                <div className="flex flex-wrap justify-center gap-1 sm:gap-2">
-                                    {['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'].map(note => (
-                                        <button
-                                            key={note}
-                                            onPointerDown={(e) => {
-                                                e.preventDefault();
-                                                e.currentTarget.releasePointerCapture(e.pointerId); // Allow smooth dragging
-                                                const isActive = memoryAllowedNotes.includes(note);
-                                                const action = isActive ? 'remove' : 'add';
-                                                dragSelectRef.current = { active: true, type: 'note', action };
+                            {/* BUTTONS */}
+                            <div className="flex flex-wrap justify-center gap-1 sm:gap-2">
+                                {['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'].map(note => (
+                                    <button
+                                        key={note}
+                                        onPointerDown={(e) => {
+                                            e.preventDefault();
+                                            e.currentTarget.releasePointerCapture(e.pointerId); // Allow smooth dragging
+                                            const isActive = memoryAllowedNotes.includes(note);
+                                            const action = isActive ? 'remove' : 'add';
+                                            dragSelectRef.current = { active: true, type: 'note', action };
 
-                                                // Immediate update
-                                                if (action === 'add') setMemoryAllowedNotes(prev => [...prev, note]);
-                                                else setMemoryAllowedNotes(prev => prev.filter(n => n !== note));
-                                            }}
-                                            onPointerEnter={() => {
-                                                const { active, type, action } = dragSelectRef.current;
-                                                if (active && type === 'note') {
-                                                    if (action === 'add' && !memoryAllowedNotes.includes(note)) {
-                                                        setMemoryAllowedNotes(prev => [...prev, note]);
-                                                    } else if (action === 'remove' && memoryAllowedNotes.includes(note)) {
-                                                        setMemoryAllowedNotes(prev => prev.filter(n => n !== note));
-                                                    }
+                                            // Immediate update
+                                            if (action === 'add') setMemoryAllowedNotes(prev => [...prev, note]);
+                                            else setMemoryAllowedNotes(prev => prev.filter(n => n !== note));
+                                        }}
+                                        onPointerEnter={() => {
+                                            const { active, type, action } = dragSelectRef.current;
+                                            if (active && type === 'note') {
+                                                if (action === 'add' && !memoryAllowedNotes.includes(note)) {
+                                                    setMemoryAllowedNotes(prev => [...prev, note]);
+                                                } else if (action === 'remove' && memoryAllowedNotes.includes(note)) {
+                                                    setMemoryAllowedNotes(prev => prev.filter(n => n !== note));
                                                 }
-                                            }}
-                                            className={`
+                                            }
+                                        }}
+                                        className={`
                                             w-7 h-7 sm:w-10 sm:h-10 rounded-md font-bold text-[0.6rem] sm:text-sm transition-all
                                             flex items-center justify-center border cursor-pointer select-none touch-none
                                             ${memoryAllowedNotes.includes(note)
-                                                    ? 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/50 scale-105 z-10'
-                                                    : 'bg-slate-800 text-slate-400 border-slate-600 hover:border-slate-400 hover:text-white'}
+                                                ? 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/50 scale-105 z-10'
+                                                : 'bg-slate-800 text-slate-400 border-slate-600 hover:border-slate-400 hover:text-white'}
                                         `}
-                                        >
-                                            {note}
-                                        </button>
-                                    ))}
-                                </div>
+                                    >
+                                        {note}
+                                    </button>
+                                ))}
                             </div>
                         </div>
-                    )}
+                    </div>
 
                     <div className="flex justify-center flex-col items-center gap-[5px] sm:gap-4 mt-[5px] sm:mt-4">
 
                         {/* ROW 2: STRINGS SELECTOR */}
-                        {!memoryGameActive && (
-                            <div className="flex flex-col items-center gap-1 sm:gap-2 w-full max-w-3xl justify-center">
-                                {/* LABEL */}
-                                <div className="text-[0.6rem] sm:text-xs font-bold text-slate-500 w-full text-center shrink-0">STRINGS</div>
+                        <div className="flex flex-col items-center gap-1 sm:gap-2 w-full max-w-3xl justify-center">
+                            {/* LABEL */}
+                            <div className="text-[0.6rem] sm:text-xs font-bold text-slate-500 w-full text-center shrink-0">STRINGS</div>
 
-                                <div className="grid grid-cols-6 gap-0.5 sm:gap-1 w-auto min-w-[180px] max-w-[220px] sm:min-w-[300px] sm:max-w-[400px]">
-                                    {[5, 4, 3, 2, 1, 0].map((stringIndex, i) => (
-                                        <button
-                                            key={stringIndex}
-                                            onPointerDown={(e) => {
-                                                e.preventDefault();
-                                                e.currentTarget.releasePointerCapture(e.pointerId);
-                                                const isActive = memoryAllowedStrings.includes(stringIndex);
-                                                const action = isActive ? 'remove' : 'add';
-                                                dragSelectRef.current = { active: true, type: 'string', action };
+                            <div className="grid grid-cols-6 gap-0.5 sm:gap-1 w-auto min-w-[180px] max-w-[220px] sm:min-w-[300px] sm:max-w-[400px]">
+                                {[5, 4, 3, 2, 1, 0].map((stringIndex, i) => (
+                                    <button
+                                        key={stringIndex}
+                                        onPointerDown={(e) => {
+                                            e.preventDefault();
+                                            e.currentTarget.releasePointerCapture(e.pointerId);
+                                            const isActive = memoryAllowedStrings.includes(stringIndex);
+                                            const action = isActive ? 'remove' : 'add';
+                                            dragSelectRef.current = { active: true, type: 'string', action };
 
-                                                // Immediate update
-                                                if (action === 'add') setMemoryAllowedStrings(prev => [...prev, stringIndex]);
-                                                else setMemoryAllowedStrings(prev => prev.filter(s => s !== stringIndex));
-                                            }}
-                                            onPointerEnter={() => {
-                                                const { active, type, action } = dragSelectRef.current;
-                                                if (active && type === 'string') {
-                                                    if (action === 'add' && !memoryAllowedStrings.includes(stringIndex)) {
-                                                        setMemoryAllowedStrings(prev => [...prev, stringIndex]);
-                                                    } else if (action === 'remove' && memoryAllowedStrings.includes(stringIndex)) {
-                                                        setMemoryAllowedStrings(prev => prev.filter(s => s !== stringIndex));
-                                                    }
+                                            // Immediate update
+                                            if (action === 'add') setMemoryAllowedStrings(prev => [...prev, stringIndex]);
+                                            else setMemoryAllowedStrings(prev => prev.filter(s => s !== stringIndex));
+                                        }}
+                                        onPointerEnter={() => {
+                                            const { active, type, action } = dragSelectRef.current;
+                                            if (active && type === 'string') {
+                                                if (action === 'add' && !memoryAllowedStrings.includes(stringIndex)) {
+                                                    setMemoryAllowedStrings(prev => [...prev, stringIndex]);
+                                                } else if (action === 'remove' && memoryAllowedStrings.includes(stringIndex)) {
+                                                    setMemoryAllowedStrings(prev => prev.filter(s => s !== stringIndex));
                                                 }
-                                            }}
-                                            className={`
+                                            }
+                                        }}
+                                        className={`
                                             h-7 w-full sm:h-10 rounded-md font-bold text-[0.6rem] sm:text-sm transition-all
                                             flex items-center justify-center border cursor-pointer select-none touch-none
                                         `}
-                                            style={{
-                                                backgroundColor: memoryAllowedStrings.includes(stringIndex) ? '#3b82f6' : '#1e293b',
-                                                color: memoryAllowedStrings.includes(stringIndex) ? '#fff' : '#94a3b8',
-                                                borderColor: memoryAllowedStrings.includes(stringIndex) ? '#3b82f6' : '#475569',
-                                                opacity: memoryAllowedStrings.includes(stringIndex) ? 1 : 0.5,
-                                                gridColumn: i + 1,
-                                                gridRow: 1
-                                            }}
-                                        >
-                                            {6 - stringIndex}
-                                        </button>
-                                    ))}
-                                </div>
+                                        style={{
+                                            backgroundColor: memoryAllowedStrings.includes(stringIndex) ? '#3b82f6' : '#1e293b',
+                                            color: memoryAllowedStrings.includes(stringIndex) ? '#fff' : '#94a3b8',
+                                            borderColor: memoryAllowedStrings.includes(stringIndex) ? '#3b82f6' : '#475569',
+                                            opacity: memoryAllowedStrings.includes(stringIndex) ? 1 : 0.5,
+                                            gridColumn: i + 1,
+                                            gridRow: 1
+                                        }}
+                                    >
+                                        {6 - stringIndex}
+                                    </button>
+                                ))}
                             </div>
-                        )}
+                        </div>
 
                         {/* ROW 3: CONTROLS */}
                         <div className="mt-6 flex gap-4 items-center">
-                            {!memoryGameActive ? (
-                                <button
-                                    onClick={startMemoryGame}
-                                    className="h-9 px-6 sm:h-12 sm:px-8 rounded-lg font-bold text-xs sm:text-base bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 hover:bg-emerald-400 hover:scale-105 transition-all"
-                                >
-                                    START HUNT
-                                </button>
-                            ) : (
-                                <div className="flex gap-4 items-center">
-
-                                    <button
-                                        onClick={() => stopMemoryGame(false)}
-                                        className="h-9 px-4 sm:h-12 sm:px-6 rounded-lg font-bold text-xs sm:text-base bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 transition-all"
-                                    >
-                                        STOP
-                                    </button>
-                                </div>
-                            )}
+                            <button
+                                onClick={startMemoryGame}
+                                className="h-9 px-6 sm:h-12 sm:px-8 rounded-lg font-bold text-xs sm:text-base bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 hover:bg-emerald-400 hover:scale-105 transition-all"
+                            >
+                                START HUNT
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            <div className="fretboard-scroll-container" style={{ display: 'flex', justifyContent: 'center' }}>
+            {activeGameMode === 'memory' && memoryGameActive && (
+                <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: '60px', marginBottom: '60px', padding: '0 20px' }}>
+                    <button
+                        onClick={() => stopMemoryGame(false)}
+                        className="h-9 px-6 sm:h-12 sm:px-8 rounded-lg font-bold text-xs sm:text-base bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 transition-all shadow-xl shadow-black/40"
+                    >
+                        STOP
+                    </button>
+                </div>
+            )}
+
+            {/* Fretboard Scroll Container - Forced Scrollability */}
+            <div className="fretboard-scroll-container no-scrollbar" style={{
+                padding: (activeGameMode === 'memory' && memoryTarget?.f === 0) ? '0 10px 0 60px' : '0 10px',
+                transition: 'padding 0.3s ease',
+                display: 'flex',
+                width: '100%',
+                position: 'relative',
+                overflowX: 'auto', // Must be auto to scroll
+                overflowY: 'hidden',
+                touchAction: 'pan-x', // Explicitly allow horizontal panning
+                WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
+                flex: 1
+            }}>
 
                 {/* LEFT GUTTER: String Numbers */}
                 <div style={{
                     display: 'flex',
                     flexDirection: 'column',
+                    flexShrink: 0,
                     marginTop: '1px', // Fine-tune alignment with board border
                     marginRight: '12px',
-                    height: 'calc(6 * var(--string-height))' // 6 strings * var(--string-height)
+                    height: 'calc(6 * var(--string-height))', // 6 strings * var(--string-height)
+                    position: 'sticky',
+                    left: 0,
+                    zIndex: 20,
+                    backgroundColor: '#0f172a' // Ensure opacity over scrolling content
                 }}>
                     {/* Loop 1 to 6 (Top to Bottom) directly since Flex is Column */
                         [1, 2, 3, 4, 5, 6].map((num) => (
@@ -1682,43 +1553,325 @@ export default function Fretboard() {
                         ))}
                 </div>
 
-                {/* RIGHT CONTENT: Board + Fret Numbers */}
-                <div style={{ display: 'flex', flexDirection: 'column', width: isMobile ? '100%' : 'auto' }}>
-                    {(() => {
-                        // Dynamic Width Calculation
-                        // If Mobile (<700px), use uniform width (1.0) for better playability
-                        // If Desktop/Tablet, use authentic decreasing ratios
-                        const activeRatios = isMobile
-                            ? new Array(fretCount).fill(1.0)
-                            : FRET_WIDTH_RATIOS.slice(0, fretCount);
+                {/* FIXED NUT PANEL (Outside Scroll Area) */}
+                <div style={{
+                    position: 'relative',
+                    width: 'var(--nut-width)',
+                    minWidth: 'var(--nut-width)',
+                    height: 'calc(6 * var(--string-height) + 30px)', // +30px for number row alignment (empty)
+                    zIndex: 30,
+                    // Border and Shadow moved to inner content to allow bottom cap to mask it
+                }}>
+                    {/* Rotated Wood Background */}
+                    <div style={{
+                        position: 'absolute',
+                        inset: 0,
+                        overflow: 'hidden',
+                        zIndex: 0
+                    }}>
+                        <div style={{
+                            position: 'absolute',
+                            top: '50%', left: '50%',
+                            width: '200vw', height: '200vw',
+                            transform: 'translate(-50%, -50%) rotate(90deg)',
+                            backgroundImage: "url('/fretboard-wood.webp')",
+                            backgroundRepeat: 'repeat',
+                        }} />
+                    </div>
 
-                        // If Mobile (<700px), use uniform width (1fr) to fill screen
-                        // If Desktop/Tablet, use authentic decreasing ratios
-                        const gridCols = isMobile
-                            ? `var(--nut-width) repeat(${fretCount}, 1fr)`
-                            : `var(--nut-width) ${activeRatios.map(r => `calc(${r} * var(--base-unit))`).join(' ')}`;
+                    {/* Strings & Interactions */}
+                    <div style={{
+                        position: 'relative',
+                        zIndex: 10,
+                        height: 'calc(6 * var(--string-height))',
+                        borderRight: '5px solid #ded6d0', // The Nut Itself (Moved here)
+                        boxShadow: '4px 0 8px rgba(0,0,0,0.5)', // Shadow only from the wood part
+                        display: 'flex',
+                        flexDirection: 'column'
+                    }}>
+                        {TUNING.slice().reverse().map((noteCode, visualIndex) => {
+                            // visualIndex 0 = High E (String 5)
+                            // visualIndex 5 = Low E (String 0)
+                            const sIndex = 5 - visualIndex;
+
+                            const thickness = 1 + (5 - sIndex) * 0.6;
+                            const isWound = sIndex <= 2;
+                            const isActive = practiceActive && currentStringIndex === sIndex;
+                            const openNote = getNoteAt(sIndex, 0);
+
+                            // Memory Game Check
+                            const isAllowed = !(activeGameMode === 'memory' && memoryGameActive && !memoryAllowedStrings.includes(sIndex));
+
+                            // VISUAL LOGIC FOR OPEN STRINGS
+                            const revealedState = isRevealed(sIndex, 0);
+                            const feedbackState = getFeedback(sIndex, 0);
+                            const isMemoryTarget = (activeGameMode === 'memory' && memoryTarget && memoryTarget.s === sIndex && memoryTarget.f === 0 && !revealedState);
+
+                            const isMenuPreview = activeGameMode === 'memory' && !memoryGameActive &&
+                                memoryAllowedStrings.includes(sIndex) &&
+                                memoryAllowedNotes.includes(openNote);
+
+                            const isDesignerNote = false;
+                            const isVisible = revealedState || isMenuPreview || isDesignerNote;
+
+                            return (
+                                <div key={`nut-string-${sIndex}`} style={{
+                                    flex: 1,
+                                    position: 'relative',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}>
+                                    {/* String Line */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        left: 0, right: -5, // Extend slightly into border
+                                        height: `${thickness}px`,
+                                        backgroundColor: isActive ? '#facc15' : (isWound ? 'transparent' : '#aa9992'),
+                                        backgroundImage: (!isActive && isWound) ? 'url("/string-closeup.webp")' : 'none',
+                                        backgroundRepeat: 'repeat-x',
+                                        backgroundSize: 'auto 100%',
+                                        zIndex: 1,
+                                        boxShadow: isActive ? '0 0 10px #facc15' : 'none'
+                                    }} />
+
+                                    {/* Interaction Button + Visuals */}
+                                    <div
+                                        className={`note-cell ${isVisible ? 'visible' : ''}`}
+                                        id={`note-cell-${sIndex}-0`}
+                                        data-string={sIndex}
+                                        data-fret={0}
+                                        style={{
+                                            width: '100%', height: '100%',
+                                            zIndex: 20,
+                                            cursor: 'pointer',
+                                            touchAction: 'none', // Critical for Drag-to-Play
+                                            pointerEvents: isAllowed ? 'auto' : 'none',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        }}
+                                        onPointerDown={(e) => {
+                                            e.preventDefault();
+                                            isPointerDown.current = true;
+                                            lastPlayedRef.current = `${sIndex}-0`;
+                                            handleNoteInteraction(sIndex, 0, openNote);
+                                        }}
+                                        onPointerMove={(e) => {
+                                            if (isPointerDown.current) {
+                                                const target = document.elementFromPoint(e.clientX, e.clientY);
+                                                const cell = target?.closest('.note-cell'); // Works for both Nut and Fretboard cells
+
+                                                if (cell) {
+                                                    const s = parseInt(cell.getAttribute('data-string'));
+                                                    const f = parseInt(cell.getAttribute('data-fret'));
+                                                    const key = `${s}-${f}`;
+
+                                                    if (lastPlayedRef.current !== key) {
+                                                        lastPlayedRef.current = key;
+                                                        const simpleNote = getNoteAt(s, f);
+                                                        handleNoteInteraction(s, f, simpleNote);
+                                                    }
+                                                }
+                                            }
+                                        }}
+                                    >
+                                        <div
+                                            className={`note-circle ${isVisible ? 'revealed' : ''} ${feedbackState || ''} ${isMemoryTarget ? 'memory-target' : ''}`}
+                                            style={
+                                                (isMenuPreview && !revealedState ? {
+                                                    backgroundColor: '#3b82f6',
+                                                    borderColor: '#60a5fa',
+                                                    color: '#ffffff',
+                                                    boxShadow: '0 0 5px rgba(59, 130, 246, 0.5)',
+                                                    fontWeight: 'bold',
+                                                    opacity: 0.9
+                                                } : {})
+                                            }
+                                        >
+                                            {isMemoryTarget ? '?' : openNote}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Bottom Cap (aligns with numbers) */}
+                    <div style={{
+                        height: '30px',
+                        background: '#0f172a',
+                        position: 'relative',
+                        zIndex: 10
+                    }} />
+                </div>
+
+                <div
+                    ref={scrollAreaRef}
+                    className="scroll-area no-scrollbar" style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        flex: 1,
+                        width: '100%',
+                        minWidth: 0,
+                        overflowX: 'auto'
+                    }}>
+                    {(() => {
+                        const renderFretCount = 22; // ALWAYS render full board (22 frets) per user request
+                        const visibleFretCount = fretCount; // User setting controls ZOOM (how many visible)
+
+                        // Layout Width Formula
+                        let boardWidth, gridCols;
+
+                        if (isMobile) {
+                            // MOBILE: Linear / Constant Width
+                            // Logic: We want 'visibleFretCount' to equal 100% width.
+                            // So Total Width = (TotalFrets / VisibleFrets) * 100%
+                            const totalRatio = renderFretCount / visibleFretCount;
+
+                            // Adjust for Nut Width not scaling? 
+                            // Simplification: proportional scaling including nut is roughly ok for linear.
+                            // Precise: (Nut + 22 * FretW) vs (Nut + 13 * FretW) = 100%.
+                            // Let's stick to the multiplier, it's robust.
+                            // Let's stick to the multiplier, it's robust.
+                            boardWidth = `${totalRatio * 100}%`;
+                            gridCols = `repeat(${renderFretCount}, 1fr)`;
+                        } else {
+                            // DESKTOP: Realistic Tapering
+                            const visibleRatioSum = FRET_WIDTH_RATIOS.slice(0, visibleFretCount).reduce((a, b) => a + b, 0);
+                            const totalRatioSum = FRET_WIDTH_RATIOS.slice(0, renderFretCount).reduce((a, b) => a + b, 0);
+
+                            const expansionFactor = totalRatioSum / visibleRatioSum;
+                            boardWidth = `calc(${expansionFactor} * 100%)`;
+                            gridCols = `${FRET_WIDTH_RATIOS.slice(0, renderFretCount).map(r => `${r}fr`).join(' ')}`;
+                        }
 
                         return (
                             <>
                                 <div className="fretboard" style={{
-                                    width: isMobile ? '100%' : 'fit-content',
-                                    minWidth: isMobile ? '0' : 'fit-content',
-                                    gridTemplateColumns: gridCols
+                                    width: boardWidth,
+                                    gridTemplateColumns: gridCols,
+                                    gridTemplateRows: 'repeat(6, var(--string-height)) 30px', // Added row for numbers
+                                    height: 'auto' // Allow growth
                                 }}>
+                                    {/* Inlays (Background) */}
+                                    {/* GRID-CONFINED WOOD BACKGROUND */}
+                                    {/* Override the CSS pseudo-element which spills over */}
+                                    <style>{`
+                                        .fretboard::before { display: none !important; }
+                                    `}</style>
+                                    <div style={{
+                                        gridColumn: '1 / -1',
+                                        gridRow: '1 / 7', // Span only string rows (1-6). 
+                                        // Wait, the numbers (Row 7) have their own background.
+                                        // So Wood should only be under strings.
+                                        // Correct.
+                                        zIndex: 0,
+                                        backgroundImage: "url('/fretboard-wood.webp')",
+                                        backgroundRepeat: 'repeat',
+                                        // Rotation logic from CSS was: translate(-50%, -50%) rotate(90deg) width 200vw.
+                                        // If I use standard background, grain is vertical?
+                                        // Wood grain usually runs HORIZONTALLY along the neck.
+                                        // Images usually vertical.
+                                        // If I need to rotate the grain 90deg...
+                                        // I can use a transformed inner div.
+                                        position: 'relative',
+                                        overflow: 'hidden'
+                                    }}>
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '50%', left: '50%',
+                                            width: '200vw', height: '200vw',
+                                            transform: 'translate(-50%, -50%) rotate(90deg)',
+                                            backgroundImage: "url('/fretboard-wood.webp')",
+                                            backgroundRepeat: 'repeat'
+                                        }}></div>
+                                    </div>
+
                                     {/* Inlays (Background) */}
                                     {renderInlays()}
 
-                                    {/* Nut Line */}
-                                    <div className="nut-line" style={{ left: 'var(--nut-width)', zIndex: 5 }}></div>
+                                    {/* STICKY NUT LAYER (Hidden - Replaced by External Panel) */}
+                                    <div style={{
+                                        display: 'none',
+                                        gridColumn: '1 / -1', // Span full grid to allow sticky to work
+                                        width: 'var(--nut-width)', // Restrict width to Nut size
+                                        gridRow: '1 / 7',
+                                        position: 'sticky',
+                                        left: 0,
+                                        zIndex: 40,
+                                        // Wood Background handled by nested div
+                                        // The Nut Visual (Right Border)
+                                        borderRight: '5px solid #ded6d0', // Bone white/grey color
+                                        boxShadow: '4px 0 8px rgba(0,0,0,0.5)', // Shadow specifically casting onto the scrolling board
+                                        overflow: 'hidden'
+                                    }}>
+                                        {/* Rotated Wood Background */}
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '50%', left: '50%',
+                                            width: '200vw', height: '200vw',
+                                            transform: 'translate(-50%, -50%) rotate(90deg)',
+                                            backgroundImage: "url('/fretboard-wood.webp')",
+                                            backgroundRepeat: 'repeat',
+                                            zIndex: -1
+                                        }} />
+
+                                        {/* Static String Segments for the Nut Area */}
+                                        {TUNING.map((_, sIndex) => {
+                                            const visualRow = 6 - sIndex; // 1-based row index? No, this is Absolute inside the div.
+                                            // We need to position these "strings" exactly where the grid rows are.
+                                            // Grid rows are `var(--string-height)`.
+                                            // So String 0 (Bottom, Row 6) is at top: 5 * string-height + 50%?
+                                            // Usage: `top: calc((6 - sIndex - 1) * var(--string-height) + 50%)`?
+                                            // Let's use Flexbox or Grid inside this Sticky Layer to match perfectly.
+                                            // Actually, easier: This Sticky Layer IS a Grid too?
+                                            // Or just use absolute positioning percentages: 
+                                            // Row 1 (Top) = 0% to 16.66%
+                                            // Center of Row 1 = 8.33%
+                                            // Since we have 6 rows...
+
+                                            // Let's replicate the thickness logic
+                                            const thickness = 1 + (5 - sIndex) * 0.6;
+                                            const isWound = sIndex <= 2;
+                                            const isActive = practiceActive && currentStringIndex === sIndex; // Keep active highlight? Sure.
+
+                                            return (
+                                                <div
+                                                    key={`nut-string-${sIndex}`}
+                                                    style={{
+                                                        position: 'absolute',
+                                                        left: 0, right: 0,
+                                                        height: `${thickness}px`,
+                                                        // Calculate Top:
+                                                        // Visual Row 1 (High E) is sIndex 5.
+                                                        // Visual Row 6 (Low E) is sIndex 0.
+                                                        // We want sIndex 5 to be at 1/12th of height?
+                                                        // Height is 100%. 6 rows. Center of first row is 1/12 aka 8.333%.
+                                                        // Center of nth row is (n-1)*1/6 + 1/12.
+                                                        top: `${((6 - sIndex - 1) * (100 / 6)) + (100 / 12)}%`,
+                                                        transform: 'translateY(-50%)',
+
+                                                        backgroundColor: isActive ? '#facc15' : (isWound ? 'transparent' : '#aa9992'),
+                                                        backgroundImage: (!isActive && isWound) ? 'url("/string-closeup.webp")' : 'none',
+                                                        backgroundRepeat: 'repeat-x',
+                                                        backgroundSize: 'auto 100%',
+                                                        boxShadow: isActive ? '0 0 10px #facc15' : '0 1px 2px rgba(0,0,0,0.6)',
+                                                        zIndex: 45 // Above wood
+                                                    }}
+                                                />
+                                            );
+                                        })}
+                                    </div>
 
                                     {/* Fret Lines */}
-                                    {Array.from({ length: fretCount }).map((_, i) => (
+                                    {Array.from({ length: renderFretCount }).map((_, i) => (
                                         <div
                                             key={`fret-line-${i + 1}`}
                                             className="fret-line"
                                             style={{
-                                                gridColumn: i + 2, // Fret 1 is Col 2
-                                                gridRow: '1 / -1',
+                                                gridColumn: i + 1, // Fret 1 is Col 1
+                                                gridRow: '1 / 7', // Constrain to strings area
                                                 position: 'relative',
                                                 justifySelf: 'end',
                                                 right: '-1px'
@@ -1766,7 +1919,7 @@ export default function Fretboard() {
 
                                     {/* Note Grid */}
                                     {TUNING.map((stringData, stringIndex) => {
-                                        return Array.from({ length: fretCount + 1 }).map((_, fretIndex) => {
+                                        return Array.from({ length: renderFretCount + 1 }).map((_, fretIndex) => {
                                             const note = getNoteAt(stringIndex, fretIndex);
                                             const key = `${stringIndex}-${fretIndex}`;
                                             const revealedState = isRevealed(stringIndex, fretIndex);
@@ -2009,10 +2162,13 @@ export default function Fretboard() {
                                                         data-string={stringIndex}
                                                         data-fret={fretIndex}
                                                         style={{
-                                                            gridColumn: fretIndex + 1,
+                                                            gridColumn: fretIndex,
                                                             gridRow: visualRow,
+                                                            display: fretIndex === 0 ? 'none' : 'flex',
                                                             pointerEvents: (activeGameMode === 'memory' && memoryGameActive && !memoryAllowedStrings.includes(stringIndex)) ? 'none' : 'auto',
-                                                            touchAction: 'none' // Critical for Drag-To-Play on mobile
+                                                            touchAction: 'none', // Critical for Drag-To-Play on mobile
+                                                            position: 'relative',
+                                                            zIndex: (practiceActive && currentStringIndex === stringIndex) ? 30 : 20
                                                         }}
                                                         onPointerDown={(e) => {
                                                             e.preventDefault();
@@ -2069,18 +2225,31 @@ export default function Fretboard() {
                                             );
                                         });
                                     })}
-                                </div>
-
-                                {/* Fret Numbers Row */}
-                                <div className="fret-numbers" style={{
-                                    width: isMobile ? '100%' : 'fit-content',
-                                    minWidth: isMobile ? '0' : 'fit-content',
-                                    gridTemplateColumns: gridCols
-                                }}>
-                                    {Array.from({ length: fretCount + 1 }).map((_, i) => {
+                                    {/* MERGED FRET NUMBERS (Row 7) - Masking Wood Texture */}
+                                    {Array.from({ length: renderFretCount + 1 }).map((_, i) => {
                                         const showNumber = MARKERS.includes(i) || DOUBLE_MARKERS.includes(i);
+                                        // Render a cell for EVERY fret to mask the wood texture underneath
                                         return (
-                                            <div key={`fret-num-${i}`} className="fret-number-cell">
+                                            <div
+                                                key={`fret-num-${i}`}
+                                                className="fret-number-cell"
+                                                style={{
+                                                    gridColumn: i,
+                                                    gridRow: 7,
+                                                    display: i === 0 ? 'none' : 'flex',
+                                                    position: 'relative',
+                                                    zIndex: 20,
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    backgroundColor: '#0f172a', // Solid mask for entire row
+                                                    height: '100%',
+                                                    width: 'calc(100% + 1px)', // Slight overlap to prevent subpixel gaps
+                                                    marginLeft: '-0.5px', // Center the overlap
+                                                    border: 'none',
+                                                    outline: 'none',
+                                                    boxShadow: 'none'
+                                                }}
+                                            >
                                                 {showNumber ? i : ''}
                                             </div>
                                         );
@@ -2095,143 +2264,180 @@ export default function Fretboard() {
 
             {/* OVERLAYS at the end to avoid z-index/clipping issues */}
             <PieMenuOverlay
-                position={pieMenuPosition}
+                target={memoryTarget}
                 onGuess={handleMemoryGuess}
                 allowedNotes={memoryAllowedNotes}
-                visible={!!pieMenuPosition && activeGameMode === 'memory' && memoryGameActive}
+                visible={!!memoryTarget && activeGameMode === 'memory' && memoryGameActive}
             />
 
         </div>
     );
 }
 
-const PieMenuOverlay = ({ position, onGuess, allowedNotes, visible }) => {
-    if (!visible || !position) return null;
+// PIE MENU OVERLAY COMPONENT (Fixed with Portal + rAF Tracking)
+const PieMenuOverlay = ({ target, onGuess, allowedNotes, visible }) => {
+    // We use a Portal to escape clipping
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
+
+    // Ref for the moving container (to update directly without re-renders)
+    const overlayRef = useRef(null);
+    const rafId = useRef(null);
+
+    // Tracking Loop
+    useEffect(() => {
+        if (!visible || !target || !mounted) return;
+
+        const updatePosition = () => {
+            const targetEl = document.getElementById(`note-cell-${target.s}-${target.f}`);
+            if (targetEl && overlayRef.current) {
+                const rect = targetEl.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+
+                // Apply directly to DOM for smoothness during scroll
+                overlayRef.current.style.transform = `translate(${centerX}px, ${centerY}px)`;
+                overlayRef.current.style.opacity = '1';
+            } else if (overlayRef.current) {
+                // Hide if target lost off screen? Or just lost.
+                overlayRef.current.style.opacity = '0';
+            }
+            rafId.current = requestAnimationFrame(updatePosition);
+        };
+
+        // Start Loop
+        updatePosition();
+
+        return () => {
+            if (rafId.current) cancelAnimationFrame(rafId.current);
+        };
+    }, [visible, target, mounted]);
+
+    if (!visible || !target || !mounted) return null;
 
     const notes = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
-    const radius = 110; // Outer radius
-    const innerRadius = 45; // Donut hole
-
-    // Create slices
-    // A is at Top (-90 deg).
+    const radius = 85;
+    const innerRadius = 50;
     const sliceAngle = 360 / 12;
 
-    return (
+    const content = (
         <div style={{
             position: 'fixed',
             top: 0,
             left: 0,
             width: '100vw',
             height: '100vh',
-            pointerEvents: 'none',
-            zIndex: 9999,
-            overflow: 'hidden'
+            zIndex: 900, // Below Navbar (1000) and Menu (1999)
+            pointerEvents: 'none' // Click through empty space
         }}>
-            <div style={{
+            {/* The Moving Container (Positioned by JS) */}
+            <div ref={overlayRef} style={{
                 position: 'absolute',
-                top: position.y,
-                left: position.x,
-                transform: 'translate(-50%, -50%)',
-                width: radius * 2,
-                height: radius * 2,
-                pointerEvents: 'auto'
+                top: 0,
+                left: 0,
+                width: 0, // Zero width/height wrapper, centered by transform
+                height: 0,
+                transform: 'translate(-1000px, -1000px)', // Initial off-screen
+                pointerEvents: 'auto', // Enable interaction with menu
+                opacity: 0, // Hidden until first update
+                transition: 'opacity 0.1s' // Fade in slightly
             }}>
-                <svg width="100%" height="100%" viewBox="-100 -100 200 200" style={{ overflow: 'visible' }}>
-                    <filter id="glow">
-                        <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
-                        <feMerge>
-                            <feMergeNode in="coloredBlur" />
-                            <feMergeNode in="SourceGraphic" />
-                        </feMerge>
-                    </filter>
+                {/* Visual Centering Wrapper (-50%) */}
+                <div style={{
+                    position: 'absolute',
+                    top: 0, left: 0,
+                    transform: 'translate(-50%, -50%)',
+                    width: radius * 2,
+                    height: radius * 2
+                }}>
+                    <svg width="100%" height="100%" viewBox="-100 -100 200 200" style={{ overflow: 'visible' }}>
+                        <filter id="glow">
+                            <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+                            <feMerge>
+                                <feMergeNode in="coloredBlur" />
+                                <feMergeNode in="SourceGraphic" />
+                            </feMerge>
+                        </filter>
 
-                    {notes.map((n, i) => {
-                        const isAllowed = allowedNotes.includes(n);
+                        {notes.map((n, i) => {
+                            const isAllowed = allowedNotes.includes(n);
 
-                        // Calculate wedge path
-                        const startAngle = (i * sliceAngle) - 90 - (sliceAngle / 2);
-                        const endAngle = startAngle + sliceAngle;
+                            const startAngle = (i * sliceAngle) - 90 - (sliceAngle / 2);
+                            const endAngle = startAngle + sliceAngle;
 
-                        // Convert to radians
-                        const startRad = (startAngle * Math.PI) / 180;
-                        const endRad = (endAngle * Math.PI) / 180;
+                            // Coordinates for Slice Path
+                            const toRad = (deg) => (deg * Math.PI) / 180;
 
-                        // Coordinates
-                        const x1 = Math.cos(startRad) * radius;
-                        const y1 = Math.sin(startRad) * radius;
-                        const x2 = Math.cos(endRad) * radius;
-                        const y2 = Math.sin(endRad) * radius;
+                            const x1 = Math.cos(toRad(startAngle)) * radius;
+                            const y1 = Math.sin(toRad(startAngle)) * radius;
+                            const x2 = Math.cos(toRad(endAngle)) * radius;
+                            const y2 = Math.sin(toRad(endAngle)) * radius;
 
-                        const x1_in = Math.cos(startRad) * innerRadius;
-                        const y1_in = Math.sin(startRad) * innerRadius;
-                        const x2_in = Math.cos(endRad) * innerRadius;
-                        const y2_in = Math.sin(endRad) * innerRadius;
+                            const x3 = Math.cos(toRad(endAngle)) * innerRadius;
+                            const y3 = Math.sin(toRad(endAngle)) * innerRadius;
+                            const x4 = Math.cos(toRad(startAngle)) * innerRadius;
+                            const y4 = Math.sin(toRad(startAngle)) * innerRadius;
 
-                        // SVG Path Command
-                        const pathData = [
-                            `M ${x1_in} ${y1_in}`,
-                            `L ${x1} ${y1}`,
-                            `A ${radius} ${radius} 0 0 1 ${x2} ${y2}`,
-                            `L ${x2_in} ${y2_in}`,
-                            `A ${innerRadius} ${innerRadius} 0 0 0 ${x1_in} ${y1_in}`,
-                            'Z'
-                        ].join(' ');
+                            const largeArc = sliceAngle > 180 ? 1 : 0;
 
-                        // Label Position (Center of wedge)
-                        const midAngle = startAngle + (sliceAngle / 2);
-                        const midRad = (midAngle * Math.PI) / 180;
-                        const textRadius = (radius + innerRadius) / 2;
-                        const tx = Math.cos(midRad) * textRadius;
-                        const ty = Math.sin(midRad) * textRadius;
+                            const pathData = [
+                                `M ${x4} ${y4}`,
+                                `L ${x1} ${y1}`,
+                                `A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`,
+                                `L ${x3} ${y3}`,
+                                `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x4} ${y4}`,
+                                'Z'
+                            ].join(' ');
 
-                        return (
-                            <g
-                                key={n}
-                                onClick={(e) => {
-                                    if (isAllowed) {
-                                        e.stopPropagation();
-                                        onGuess(n, e);
-                                    }
-                                }}
-                                style={{
-                                    cursor: isAllowed ? 'pointer' : 'default',
-                                    opacity: isAllowed ? 1 : 0.3,
-                                    transition: 'all 0.2s ease',
-                                    transformOrigin: '0 0'
-                                }}
-                                onMouseEnter={(e) => {
-                                    if (isAllowed) e.currentTarget.style.transform = 'scale(1.1)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    if (isAllowed) e.currentTarget.style.transform = 'scale(1)';
-                                }}
-                            >
-                                <path
-                                    d={pathData}
-                                    fill={isAllowed ? '#3b82f6' : '#1e293b'}
-                                    stroke="#1e293b"
-                                    strokeWidth="1"
-                                    className="hover:brightness-110"
-                                />
-                                <text
-                                    x={tx}
-                                    y={ty}
-                                    fill="#fff"
-                                    fontSize="10"
-                                    fontWeight="bold"
-                                    textAnchor="middle"
-                                    alignmentBaseline="middle"
-                                    pointerEvents="none"
+                            // Text Label Position
+                            const midAngle = startAngle + (sliceAngle / 2);
+                            const textRadius = (radius + innerRadius) / 2;
+                            const tx = Math.cos(toRad(midAngle)) * textRadius;
+                            const ty = Math.sin(toRad(midAngle)) * textRadius;
+
+                            return (
+                                <g
+                                    key={n}
+                                    onClick={(e) => {
+                                        e.stopPropagation(); // Consume click
+                                        if (isAllowed) onGuess(n);
+                                    }}
+                                    style={{
+                                        cursor: isAllowed ? 'pointer' : 'default',
+                                        opacity: isAllowed ? 1 : 0.8,
+                                        transition: 'transform 0.1s'
+                                    }}
+                                    onMouseEnter={(e) => { if (isAllowed) e.currentTarget.style.transform = 'scale(1.05)'; }}
+                                    onMouseLeave={(e) => { if (isAllowed) e.currentTarget.style.transform = 'scale(1)'; }}
                                 >
-                                    {n}
-                                </text>
-                            </g>
-                        );
-                    })}
-                </svg>
+                                    <path
+                                        d={pathData}
+                                        fill={isAllowed ? '#3b82f6' : '#1e293b'}
+                                        stroke="#1e3a8a"
+                                        strokeWidth="1"
+                                    />
+                                    <text
+                                        x={tx}
+                                        y={ty}
+                                        textAnchor="middle"
+                                        dominantBaseline="middle"
+                                        fill="white"
+                                        fontSize="14"
+                                        fontWeight="bold"
+                                        style={{ pointerEvents: 'none' }}
+                                    >
+                                        {n}
+                                    </text>
+                                </g>
+                            );
+                        })}
+
+                    </svg>
+                </div>
             </div>
         </div>
     );
-};
 
+    return createPortal(content, document.body);
+};
 

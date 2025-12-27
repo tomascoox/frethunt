@@ -79,6 +79,10 @@
         width: 100%;
         /* Full width buttons for easier tapping */
     }
+
+    .fret-numbers {
+        margin-top: 4px;
+    }
 }
 
 /* Controls Bar */
@@ -148,8 +152,14 @@
     background-color: #2e201a;
     /* Fallback color matching wood */
 
-    border: 1px solid #2d2a2a;
+    /* border: 1px solid #2d2a2a; REMOVED BORDER */
+    box-shadow: none;
+    /* Remove shadow to clean up edges if border is gone? Or keep shadow? visible shadow on numbers is weird. */
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+    /* Keep shadow for depth */
+    border-radius: 0;
+    /* Remove radius if full width? No, it's inside breakout. Keep radius? */
+    /* If border is gone, radius might clip content weirdly. */
     border-radius: 4px;
     overflow: hidden;
     /* Clip the rotated background */
