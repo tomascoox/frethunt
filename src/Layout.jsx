@@ -74,26 +74,30 @@ export default function Layout({
                     boxShadow: '10px 0 30px rgba(0,0,0,0.5)',
                     animation: 'slideIn 0.2s ease-out'
                 }}>
-                    <button
-                        onClick={() => switchGameMode('chord-designer')}
-                        className={`w-full text-left px-4 py-3 rounded-lg font-bold transition-all border ${activeGameMode === 'chord-designer' ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'}`}
-                    >
-                        TRIADS
-                    </button>
+                    {import.meta.env.DEV && (
+                        <>
+                            <button
+                                onClick={() => switchGameMode('chord-designer')}
+                                className={`w-full text-left px-4 py-3 rounded-lg font-bold transition-all border ${activeGameMode === 'chord-designer' ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'}`}
+                            >
+                                TRIADS
+                            </button>
 
-                    <button
-                        onClick={() => switchGameMode('string-walker')}
-                        className={`w-full text-left px-4 py-3 rounded-lg font-bold transition-all border ${activeGameMode === 'string-walker' ? 'bg-teal-500 text-slate-900 border-teal-500' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'}`}
-                    >
-                        STRING WALKER
-                    </button>
+                            <button
+                                onClick={() => switchGameMode('string-walker')}
+                                className={`w-full text-left px-4 py-3 rounded-lg font-bold transition-all border ${activeGameMode === 'string-walker' ? 'bg-teal-500 text-slate-900 border-teal-500' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'}`}
+                            >
+                                STRING WALKER
+                            </button>
 
-                    <button
-                        onClick={() => switchGameMode('triad-hunt')}
-                        className={`w-full text-left px-4 py-3 rounded-lg font-bold transition-all border ${activeGameMode === 'triad-hunt' ? 'bg-violet-500 text-white border-violet-500' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'}`}
-                    >
-                        TRIAD HUNT
-                    </button>
+                            <button
+                                onClick={() => switchGameMode('triad-hunt')}
+                                className={`w-full text-left px-4 py-3 rounded-lg font-bold transition-all border ${activeGameMode === 'triad-hunt' ? 'bg-violet-500 text-white border-violet-500' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'}`}
+                            >
+                                TRIAD HUNT
+                            </button>
+                        </>
+                    )}
 
                     <button
                         onClick={() => switchGameMode('memory')}
