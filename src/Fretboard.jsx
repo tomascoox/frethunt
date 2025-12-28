@@ -17,8 +17,8 @@ const FRET_WIDTH_RATIOS = [
 
 // Inlay Markers (Standard 3, 5, 7, 9, 12, 15, 17, 19, 21)
 // Inlay Markers (Standard 3, 5, 7, 9, 12, 15, 17, 19, 22)
-const MARKERS = [3, 5, 7, 9, 15, 17, 19]; // 1-indexed frets
-const DOUBLE_MARKERS = [12, 22, 24]; // 1-indexed frets (22 is double per user request)
+const MARKERS = [3, 5, 7, 9, 15, 17, 19, 21]; // 1-indexed frets
+const DOUBLE_MARKERS = [12, 24]; // 1-indexed frets
 
 // Helper to get note name (e.g., 'C', 'F#')
 const getNoteAt = (stringIndex, fretIndex) => {
