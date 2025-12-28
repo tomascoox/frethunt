@@ -1526,34 +1526,36 @@ export default function Fretboard({
 
                     {/* CUSTOM MODE CONTROLS */}
                     {isCustomSelectionMode && (
-                        <div className="flex items-center gap-2 sm:gap-4 justify-center py-2 px-3 sm:px-4 bg-slate-800/50 rounded-lg w-full border border-purple-500/30 animate-pulse-slow my-2">
-                            <button
-                                onClick={() => {
-                                    setIsCustomSelectionMode(false);
-                                    setCustomSelectedNotes([]);
-                                }}
-                                className="px-3 py-1 rounded bg-slate-700 text-slate-300 text-xs font-bold hover:bg-slate-600 border border-slate-600"
-                            >
-                                CANCEL
-                            </button>
-
-                            <span className="text-purple-300 text-[0.65rem] sm:text-sm font-bold uppercase tracking-wider text-center leading-tight">
-                                Select notes<br className="sm:hidden" /> on the fretboard
+                        <div className="flex flex-col items-center gap-3 justify-center py-3 px-4 bg-slate-800/50 rounded-lg w-full border border-purple-500/30 animate-pulse-slow my-2">
+                            <span className="text-purple-300 text-sm sm:text-base font-bold uppercase tracking-wider text-center leading-tight">
+                                Select notes on the fretboard
                             </span>
 
-                            <button
-                                onClick={() => {
-                                    if (customSelectedNotes.length > 0) {
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => {
                                         setIsCustomSelectionMode(false);
-                                        setIsCustomSetReady(true);
-                                    } else {
-                                        alert("Select at least one note!");
-                                    }
-                                }}
-                                className="px-3 py-1 rounded bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 shadow-lg shadow-emerald-500/20 border border-emerald-500"
-                            >
-                                OK
-                            </button>
+                                        setCustomSelectedNotes([]);
+                                    }}
+                                    className="px-4 py-2 rounded bg-slate-700 text-slate-300 text-xs font-bold hover:bg-slate-600 border border-slate-600"
+                                >
+                                    CANCEL
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        if (customSelectedNotes.length > 0) {
+                                            setIsCustomSelectionMode(false);
+                                            setIsCustomSetReady(true);
+                                        } else {
+                                            alert("Select at least one note!");
+                                        }
+                                    }}
+                                    className="px-4 py-2 rounded bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 shadow-lg shadow-emerald-500/20 border border-emerald-500"
+                                >
+                                    OK
+                                </button>
+                            </div>
                         </div>
                     )}
 
