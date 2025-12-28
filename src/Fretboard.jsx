@@ -129,9 +129,28 @@ export default function Fretboard({
     const [sessionXP, setSessionXP] = useState(0); // Track XP gained in this session
     const [memoryTarget, setMemoryTarget] = useState(null); // { s, f, note: 'C#' }
     // const [pieMenuPosition, setPieMenuPosition] = useState(null); // REMOVED: PieMenu tracks itself now
-    const [memoryAllowedNotes, setMemoryAllowedNotes] = useState(NOTES); // Default all
-    const [memoryAllowedStrings, setMemoryAllowedStrings] = useState([0, 1, 2, 3, 4, 5]); // Default all
+    const [memoryAllowedNotes, setMemoryAllowedNotes] = useState(() => {
+        try {
+            const saved = localStorage.getItem('fretboard_memoryAllowedNotes');
+            return saved ? JSON.parse(saved) : NOTES;
+        } catch (e) { return NOTES; }
+    });
+    const [memoryAllowedStrings, setMemoryAllowedStrings] = useState(() => {
+        try {
+            const saved = localStorage.getItem('fretboard_memoryAllowedStrings');
+            return saved ? JSON.parse(saved) : [0, 1, 2, 3, 4, 5];
+        } catch (e) { return [0, 1, 2, 3, 4, 5]; }
+    });
+
+    // LOW-LEVEL PERSISTENCE (Debouncing not strictly needed for settings)
+    useEffect(() => { localStorage.setItem('fretboard_memoryAllowedNotes', JSON.stringify(memoryAllowedNotes)); }, [memoryAllowedNotes]);
+    useEffect(() => { localStorage.setItem('fretboard_memoryAllowedStrings', JSON.stringify(memoryAllowedStrings)); }, [memoryAllowedStrings]);
     const [questionsLeft, setQuestionsLeft] = useState(10); // 10 Questions per round
+
+    // CUSTOM SELECTION STATE
+    const [isCustomSelectionMode, setIsCustomSelectionMode] = useState(false);
+    const [customSelectedNotes, setCustomSelectedNotes] = useState([]); // ["3-5", "2-7"]
+    const [isCustomSetReady, setIsCustomSetReady] = useState(false);
 
     // CHORD DESIGNER STATE
     const [designerRoot, setDesignerRoot] = useState('C');
@@ -380,6 +399,7 @@ export default function Fretboard({
         setMemoryGameOver(false);
         setScore(0);
         setFeedbackMsg('');
+        lastTargetRef.current = null;
         nextMemoryTarget();
     };
 
@@ -390,17 +410,26 @@ export default function Fretboard({
     };
 
     const nextMemoryTarget = () => {
-        const validPositions = [];
+        let validPositions = [];
 
-        memoryAllowedStrings.forEach(sIndex => {
-            if (!TUNING[sIndex]) return;
-            for (let f = 0; f <= fretCount; f++) {
-                const note = getNoteAt(sIndex, f);
-                if (memoryAllowedNotes.includes(note)) {
-                    validPositions.push({ s: sIndex, f: f, note: note });
+        if (isCustomSetReady && customSelectedNotes.length > 0) {
+            // USE CUSTOM SELECTION
+            validPositions = customSelectedNotes.map(key => {
+                const [s, f] = key.split('-').map(Number);
+                return { s, f, note: getNoteAt(s, f) };
+            });
+        } else {
+            // STANDARD SELECTION
+            memoryAllowedStrings.forEach(sIndex => {
+                if (!TUNING[sIndex]) return;
+                for (let f = 0; f <= fretCount; f++) {
+                    const note = getNoteAt(sIndex, f);
+                    if (memoryAllowedNotes.includes(note)) {
+                        validPositions.push({ s: sIndex, f: f, note: note });
+                    }
                 }
-            }
-        });
+            });
+        }
 
         if (validPositions.length === 0) {
             setFeedbackMsg("NO NOTES SELECTED!");
@@ -408,7 +437,15 @@ export default function Fretboard({
             return;
         }
 
-        const randomPos = validPositions[Math.floor(Math.random() * validPositions.length)];
+        // SMART RANDOM: Prevent immediate repetition
+        let candidates = validPositions;
+        if (candidates.length > 1 && lastTargetRef.current) {
+            candidates = candidates.filter(p => `${p.s}-${p.f}` !== lastTargetRef.current);
+        }
+
+        const randomPos = candidates[Math.floor(Math.random() * candidates.length)];
+
+        lastTargetRef.current = `${randomPos.s}-${randomPos.f}`;
         setMemoryTarget(randomPos);
         setRevealed({});
     };
@@ -433,6 +470,7 @@ export default function Fretboard({
 
 
 
+    const lastTargetRef = useRef(null);
     const synthRef = useRef(null);
     const timerRef = useRef(null);
     const timeoutsRef = useRef({}); // For managing flash timeouts
@@ -825,6 +863,19 @@ export default function Fretboard({
     };
 
     const handleNoteInteraction = (stringIndex, fretIndex, note) => {
+        if (isCustomSelectionMode) {
+            // CUSTOM SELECTION MODE: Toggle selection & Play Sound (per user request)
+            const fullNote = getNoteWithOctave(stringIndex, fretIndex);
+            playNote(fullNote, stringIndex);
+
+            const key = `${stringIndex}-${fretIndex}`;
+            setCustomSelectedNotes(prev => {
+                if (prev.includes(key)) return prev.filter(k => k !== key);
+                return [...prev, key];
+            });
+            return;
+        }
+
         if (activeGameMode === 'triad-hunt') {
             checkTriadClick(stringIndex, fretIndex);
         } else if (practiceActive) {
@@ -1382,7 +1433,7 @@ export default function Fretboard({
             {/* MEMORY GAME HUD */}
             {/* MEMORY GAME HUD */}
             {activeGameMode === 'memory' && !memoryGameActive && (
-                <div className="game-hud" style={{ width: '100%', flexDirection: 'column', gap: '8px', marginBottom: '15px', background: 'rgba(30, 41, 59, 0.5)', padding: '10px', borderRadius: '12px', border: '1px solid #3b82f6' }}>
+                <div className="game-hud" style={{ width: 'auto', margin: '0 10px', flexDirection: 'column', gap: '8px', marginBottom: '15px', background: 'rgba(30, 41, 59, 0.5)', padding: '10px', borderRadius: '12px', border: '1px solid #3b82f6' }}>
 
                     {/* ROW 1: NOTES SELECTOR */}
                     <div className="flex flex-col gap-1 items-center w-full">
@@ -1395,6 +1446,7 @@ export default function Fretboard({
                                 {['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'].map(note => (
                                     <button
                                         key={note}
+                                        disabled={isCustomSelectionMode}
                                         onPointerDown={(e) => {
                                             e.preventDefault();
                                             e.currentTarget.releasePointerCapture(e.pointerId); // Allow smooth dragging
@@ -1411,15 +1463,18 @@ export default function Fretboard({
                                             if (active && type === 'note') {
                                                 if (action === 'add' && !memoryAllowedNotes.includes(note)) {
                                                     setMemoryAllowedNotes(prev => [...prev, note]);
+                                                    setIsCustomSetReady(false);
                                                 } else if (action === 'remove' && memoryAllowedNotes.includes(note)) {
                                                     setMemoryAllowedNotes(prev => prev.filter(n => n !== note));
+                                                    setIsCustomSetReady(false);
                                                 }
                                             }
                                         }}
                                         className={`
                                             w-7 h-7 sm:w-10 sm:h-10 rounded-md font-bold text-[0.6rem] sm:text-sm transition-all
                                             flex items-center justify-center border cursor-pointer select-none touch-none
-                                            ${memoryAllowedNotes.includes(note)
+                                            ${isCustomSelectionMode ? 'opacity-20 pointer-events-none grayscale' : ''}
+                                            ${memoryAllowedNotes.includes(note) && !isCustomSelectionMode
                                                 ? 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/50 scale-105 z-10'
                                                 : 'bg-slate-800 text-slate-400 border-slate-600 hover:border-slate-400 hover:text-white'}
                                         `}
@@ -1427,11 +1482,80 @@ export default function Fretboard({
                                         {note}
                                     </button>
                                 ))}
+
+                                {/* CUSTOM SELECTION BUTTON */}
+                                <button
+                                    onClick={() => {
+                                        setIsCustomSelectionMode(true);
+
+                                        // IMPORT EXISTING SELECTION IF EMPTY OR OVERWRITE LOGIC?
+                                        // User wants to refine current selection.
+                                        // If we are NOT already in a "Ready Custom Set", we import from Standard filters.
+                                        // If we ARE (isCustomSetReady=true), we keep editing it.
+                                        if (!isCustomSetReady) {
+                                            const initialSelection = [];
+                                            const maxF = 22;
+                                            memoryAllowedStrings.forEach(s => {
+                                                if (!TUNING[s]) return;
+                                                for (let f = 0; f <= maxF; f++) {
+                                                    const n = getNoteAt(s, f);
+                                                    if (memoryAllowedNotes.includes(n)) {
+                                                        initialSelection.push(`${s}-${f}`);
+                                                    }
+                                                }
+                                            });
+                                            setCustomSelectedNotes(initialSelection);
+                                        }
+                                        setIsCustomSetReady(false);
+                                    }}
+                                    disabled={isCustomSelectionMode}
+                                    className={`
+                                        h-7 sm:h-10 px-2 sm:px-3 rounded-md font-bold text-[0.6rem] sm:text-sm transition-all
+                                        flex items-center justify-center border cursor-pointer select-none touch-none
+                                        bg-purple-600 text-white border-purple-500 shadow-lg shadow-purple-500/50 hover:bg-purple-500
+                                        ${isCustomSelectionMode ? 'bg-purple-800 border-purple-800 ring-2 ring-white cursor-default' : ''}
+                                    `}
+                                >
+                                    CUSTOM
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex justify-center flex-col items-center gap-[5px] sm:gap-4 mt-[5px] sm:mt-4">
+                    {/* CUSTOM MODE CONTROLS */}
+                    {isCustomSelectionMode && (
+                        <div className="flex items-center gap-4 justify-center py-2 bg-slate-800/50 rounded-lg w-full border border-purple-500/30 animate-pulse-slow my-2">
+                            <button
+                                onClick={() => {
+                                    setIsCustomSelectionMode(false);
+                                    setCustomSelectedNotes([]);
+                                }}
+                                className="px-3 py-1 rounded bg-slate-700 text-slate-300 text-xs font-bold hover:bg-slate-600 border border-slate-600"
+                            >
+                                CANCEL
+                            </button>
+
+                            <span className="text-purple-300 text-xs sm:text-sm font-bold uppercase tracking-wider">
+                                Select notes on the fretboard
+                            </span>
+
+                            <button
+                                onClick={() => {
+                                    if (customSelectedNotes.length > 0) {
+                                        setIsCustomSelectionMode(false);
+                                        setIsCustomSetReady(true);
+                                    } else {
+                                        alert("Select at least one note!");
+                                    }
+                                }}
+                                className="px-3 py-1 rounded bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 shadow-lg shadow-emerald-500/20 border border-emerald-500"
+                            >
+                                OK
+                            </button>
+                        </div>
+                    )}
+
+                    <div className={`flex justify-center flex-col items-center gap-[5px] sm:gap-4 mt-[5px] sm:mt-4 ${isCustomSelectionMode ? 'opacity-20 pointer-events-none' : ''}`}>
 
                         {/* ROW 2: STRINGS SELECTOR */}
                         <div className="flex flex-col items-center gap-1 sm:gap-2 w-full max-w-3xl justify-center">
@@ -1483,7 +1607,7 @@ export default function Fretboard({
                         </div>
 
                         {/* ROW 3: CONTROLS */}
-                        <div className="mt-6 flex gap-4 items-center">
+                        <div className="mt-3 flex gap-4 items-center">
                             <button
                                 onClick={startMemoryGame}
                                 className="h-9 px-6 sm:h-12 sm:px-8 rounded-lg font-bold text-xs sm:text-base bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 hover:bg-emerald-400 hover:scale-105 transition-all"
@@ -1607,12 +1731,13 @@ export default function Fretboard({
                             const feedbackState = getFeedback(sIndex, 0);
                             const isMemoryTarget = (activeGameMode === 'memory' && memoryTarget && memoryTarget.s === sIndex && memoryTarget.f === 0 && !revealedState);
 
-                            const isMenuPreview = activeGameMode === 'memory' && !memoryGameActive &&
+                            const isMenuPreview = !isCustomSelectionMode && !isCustomSetReady && activeGameMode === 'memory' && !memoryGameActive &&
                                 memoryAllowedStrings.includes(sIndex) &&
                                 memoryAllowedNotes.includes(openNote);
 
                             const isDesignerNote = false;
-                            const isVisible = revealedState || isMenuPreview || isDesignerNote;
+                            const isCustomSelected = (isCustomSelectionMode || (isCustomSetReady && !memoryGameActive)) && customSelectedNotes.includes(`${sIndex}-0`);
+                            const isVisible = revealedState || isMenuPreview || isDesignerNote || isCustomSelected;
 
                             return (
                                 <div key={`nut-string-${sIndex}`} style={{
@@ -1679,7 +1804,14 @@ export default function Fretboard({
                                         <div
                                             className={`note-circle ${isVisible ? 'revealed' : ''} ${feedbackState || ''} ${isMemoryTarget ? 'memory-target' : ''}`}
                                             style={
-                                                (isMenuPreview && !revealedState ? {
+                                                isCustomSelected ? {
+                                                    backgroundColor: '#3b82f6',
+                                                    borderColor: '#60a5fa',
+                                                    color: '#ffffff',
+                                                    boxShadow: '0 0 5px rgba(59, 130, 246, 0.5)',
+                                                    fontWeight: 'bold',
+                                                    opacity: 0.9
+                                                } : (isMenuPreview && !revealedState ? {
                                                     backgroundColor: '#3b82f6',
                                                     borderColor: '#60a5fa',
                                                     color: '#ffffff',
@@ -1932,9 +2064,11 @@ export default function Fretboard({
                                             const isMemoryTarget = memoryGameActive && memoryTarget && memoryTarget.s === stringIndex && memoryTarget.f === fretIndex;
 
                                             // MENU PREVIEW
-                                            const isMenuPreview = activeGameMode === 'memory' && !memoryGameActive &&
+                                            const isMenuPreview = !isCustomSelectionMode && !isCustomSetReady && activeGameMode === 'memory' && !memoryGameActive &&
                                                 memoryAllowedStrings.includes(stringIndex) &&
                                                 memoryAllowedNotes.includes(note);
+
+                                            const isCustomSelected = (isCustomSelectionMode || (isCustomSetReady && !memoryGameActive)) && customSelectedNotes.includes(key);
 
                                             // CHORD DESIGNER LOGIC
                                             let isDesignerNote = false;
@@ -2151,7 +2285,7 @@ export default function Fretboard({
                                                 }
                                             }
 
-                                            const isVisible = revealedState || isMenuPreview || isDesignerNote;
+                                            const isVisible = revealedState || isMenuPreview || isDesignerNote || isCustomSelected;
 
                                             return (
                                                 <React.Fragment key={key}>
@@ -2198,7 +2332,14 @@ export default function Fretboard({
                                                         <div
                                                             className={`note-circle ${isVisible ? 'revealed' : ''} ${feedbackState || ''} ${isMemoryTarget ? 'memory-target' : ''}`}
                                                             style={
-                                                                isDesignerNote ? {
+                                                                isCustomSelected ? {
+                                                                    backgroundColor: '#3b82f6',
+                                                                    borderColor: '#60a5fa',
+                                                                    color: '#ffffff',
+                                                                    boxShadow: '0 0 5px rgba(59, 130, 246, 0.5)',
+                                                                    fontWeight: 'bold',
+                                                                    opacity: 0.9
+                                                                } : isDesignerNote ? {
                                                                     backgroundColor: designerColor,
                                                                     borderColor: designerColor,
                                                                     color: '#0f172a', // Dark text on bright colors
@@ -2254,7 +2395,7 @@ export default function Fretboard({
                                             </div>
                                         );
                                     })}
-                                </div>
+                                </div >
                             </>
                         );
                     })()}
@@ -2263,14 +2404,28 @@ export default function Fretboard({
 
 
             {/* OVERLAYS at the end to avoid z-index/clipping issues */}
+            {/* PIE MENU (Portal) */}
             <PieMenuOverlay
                 target={memoryTarget}
                 onGuess={handleMemoryGuess}
-                allowedNotes={memoryAllowedNotes}
+                allowedNotes={(() => {
+                    if (isCustomSetReady) {
+                        const unique = new Set();
+                        customSelectedNotes.forEach(k => {
+                            const parts = k.split('-');
+                            const s = parseInt(parts[0], 10);
+                            const f = parseInt(parts[1], 10);
+                            const n = getNoteAt(s, f);
+                            unique.add(n);
+                        });
+                        return Array.from(unique);
+                    }
+                    return memoryAllowedNotes;
+                })()}
                 visible={!!memoryTarget && activeGameMode === 'memory' && memoryGameActive}
             />
 
-        </div>
+        </div >
     );
 }
 
