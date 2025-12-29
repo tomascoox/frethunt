@@ -140,6 +140,7 @@ export default function Fretboard({
     const [memoryGameOver, setMemoryGameOver] = useState(false);
     const [sessionXP, setSessionXP] = useState(0); // Track XP gained in this session
     const [memoryTarget, setMemoryTarget] = useState(null); // { s, f, note: 'C#' }
+    const [sessionHistory, setSessionHistory] = useState({}); // { 'C#': { correct: 0, wrong: 0 } }
     // const [pieMenuPosition, setPieMenuPosition] = useState(null); // REMOVED: PieMenu tracks itself now
     const [memoryAllowedNotes, setMemoryAllowedNotes] = useState(() => {
         try {
@@ -477,16 +478,35 @@ export default function Fretboard({
             return;
         }
 
-        // SMART RANDOM: Prevent immediate repetition
+        // SMART RANDOM: Weighted Selection based on Session History
         let candidates = validPositions;
         if (candidates.length > 1 && lastTargetRef.current) {
             candidates = candidates.filter(p => `${p.s}-${p.f}` !== lastTargetRef.current);
         }
 
-        const randomPos = candidates[Math.floor(Math.random() * candidates.length)];
+        // Calculate Weights
+        // Base weight = 10. Wrong answer adds massive weight (+25) to prioritize review.
+        const weightedPool = candidates.map(p => {
+            const h = sessionHistory[p.note] || { correct: 0, wrong: 0 };
+            const weight = 10 + (h.wrong * 25);
+            return { pos: p, weight };
+        });
 
-        lastTargetRef.current = `${randomPos.s}-${randomPos.f}`;
-        setMemoryTarget(randomPos);
+        const totalWeight = weightedPool.reduce((sum, item) => sum + item.weight, 0);
+        let randomVal = Math.random() * totalWeight;
+
+        // Roulette Selection
+        let selectedPos = weightedPool[0].pos; // Fallback
+        for (let item of weightedPool) {
+            if (randomVal < item.weight) {
+                selectedPos = item.pos;
+                break;
+            }
+            randomVal -= item.weight;
+        }
+
+        lastTargetRef.current = `${selectedPos.s}-${selectedPos.f}`;
+        setMemoryTarget(selectedPos);
         setRevealed({});
     };
 
@@ -495,6 +515,14 @@ export default function Fretboard({
 
         if (guessedNote === memoryTarget.note) {
             // Correct!
+            setSessionHistory(prev => ({
+                ...prev,
+                [memoryTarget.note]: {
+                    correct: (prev[memoryTarget.note]?.correct || 0) + 1,
+                    wrong: (prev[memoryTarget.note]?.wrong || 0)
+                }
+            }));
+
             setScore(s => s + 1);
             setFeedbackMsg('CORRECT!');
             playCoinSound();
@@ -901,6 +929,8 @@ export default function Fretboard({
             setScore(s => Math.max(0, s - 50));
         }
     };
+
+
 
     const handleNoteInteraction = (stringIndex, fretIndex, note) => {
         if (isCustomSelectionMode) {
