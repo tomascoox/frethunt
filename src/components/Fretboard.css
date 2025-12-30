@@ -1,0 +1,435 @@
+.fretboard-wrapper {
+    /* overflow-x: auto;  REMOVED: No scrolling allowed */
+    padding: 20px 40px;
+    /* Comfortable side padding */
+    /* ZERO side padding */
+    width: 100%;
+    /* Use almost full width */
+    max-width: none;
+    /* REMOVED limit: Use full window */
+    margin: 0 auto;
+    /* Center nicely */
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    /* Disable Text Selection */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+    /* Responsive Variables */
+    --base-unit: 80px;
+    --nut-width: 38px;
+    --string-height: 42px;
+    --fret-width: 6px;
+}
+
+
+
+@media (max-width: 1024px) {
+    .fretboard-wrapper {
+        --base-unit: 52px;
+        --nut-width: 34px;
+        --string-height: 36px;
+        --fret-width: 5px;
+        padding: 20px;
+        /* Reduce padding */
+    }
+}
+
+@media (max-width: 768px) {
+    .fretboard-wrapper {
+        --base-unit: 45px;
+        --nut-width: 30px;
+        --string-height: 32px;
+        --fret-width: 4px;
+        padding: 10px;
+    }
+
+    .btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .fretboard-wrapper {
+        --base-unit: 24px;
+        /* Aggressive shrink for mobile portrait */
+        --nut-width: 24px;
+        --string-height: 28px;
+        --fret-width: 3px;
+        padding: 15px 12px;
+        /* Balanced mobile padding */
+    }
+
+
+
+    .controls {
+        gap: 4px;
+    }
+
+    .btn {
+        padding: 6px 10px;
+        /* Slightly larger touch target than 4px */
+        font-size: 0.75rem;
+        width: 100%;
+        /* Full width buttons for easier tapping */
+    }
+
+    .fret-numbers {
+        margin-top: 4px;
+    }
+}
+
+/* Controls Bar */
+.controls {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    /* Allow wrapping on small screens */
+    justify-content: center;
+}
+
+.btn {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--accent);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+}
+
+.btn:hover {
+    background-color: var(--accent);
+    color: #0f172a;
+    /* Dark text on bright accent */
+    box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+/* Container for board + numbers to ensure they scroll together */
+.fretboard-scroll-container {
+    width: 100%;
+    /* Force fit */
+    /* min-width: max-content; REMOVED: Do not force expansion */
+    margin: 0 auto;
+    overflow-x: auto;
+    /* Allow scrolling if it still overflows slightly */
+    padding-bottom: 10px;
+    /* Space for scrollbar */
+}
+
+.fretboard {
+    display: grid;
+    width: fit-content;
+    /* Ensure it exactly fits the columns defined by grid-template-columns */
+    /*
+       Realistic Fret Spacing (Scale: 25.5")
+       Col 1: Nut/Open (fixed 50px)
+       Cols 2-23: Frets 1-22 (proportional fr units based on 17.817 formula)
+       Using minmax(0, ...fr) to force columns to shrink below content size if needed,
+       preventing the grid from blowing out the container width.
+    */
+    grid-template-columns:
+        50px minmax(0, 1.431fr) minmax(0, 1.351fr) minmax(0, 1.275fr) minmax(0, 1.203fr) minmax(0, 1.136fr) minmax(0, 1.072fr) minmax(0, 1.012fr) minmax(0, 0.955fr) minmax(0, 0.902fr) minmax(0, 0.851fr) minmax(0, 0.803fr) minmax(0, 0.758fr) minmax(0, 0.716fr) minmax(0, 0.675fr) minmax(0, 0.638fr) minmax(0, 0.602fr) minmax(0, 0.568fr) minmax(0, 0.536fr) minmax(0, 0.506fr) minmax(0, 0.478fr) minmax(0, 0.451fr) minmax(0, 0.425fr);
+    grid-template-rows: repeat(6, var(--string-height));
+    /* Slimmer rows for electric guitar feel */
+    /* Slimmer rows for electric guitar feel */
+    position: relative;
+    background-color: transparent;
+
+    /* border: 1px solid #2d2a2a; REMOVED BORDER */
+    box-shadow: none;
+    /* Remove shadow to clean up edges if border is gone? Or keep shadow? visible shadow on numbers is weird. */
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+    /* Keep shadow for depth */
+    border-radius: 0;
+    /* Remove radius if full width? No, it's inside breakout. Keep radius? */
+    /* If border is gone, radius might clip content weirdly. */
+    border-radius: 4px;
+    overflow: hidden;
+    /* Clip the rotated background */
+}
+
+/* Rotated Wood Texture */
+.fretboard::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200vw;
+    /* Massive square to ensure coverage after rotation */
+    height: 200vw;
+    transform: translate(-50%, -50%) rotate(90deg);
+    background-image: url('/fretboard-wood-pale.webp');
+    background-repeat: repeat;
+    z-index: 0;
+    /* Painted first, so behind content */
+    pointer-events: none;
+}
+
+/* Inlay Markers */
+.marker {
+    position: relative;
+    /* Changed from absolute to allow margin auto centering in grid */
+    border-radius: 50%;
+    /* background: var(--inlay-color); REPLACED by Pearl Texture */
+    background-image: url('/pearl.webp');
+    background-size: 1500%;
+    /* Zoom in significantly to show texture detail */
+    background-position: center;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.3), inset 0 0 5px rgba(255, 255, 255, 0.2);
+    aspect-ratio: 1/1;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.marker.single {
+    width: calc(var(--string-height) * 0.7);
+    height: auto;
+}
+
+.marker.double {
+    width: calc(var(--string-height) * 0.7);
+    height: auto;
+}
+
+/* Strings */
+.string-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: var(--string-color);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* Frets (Vertical lines) */
+/* Frets (Vertical lines) - EVO Gold Style */
+.fret-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: var(--fret-width);
+    /* Slightly thicker for premium look */
+    /* 3D Gold Gradient */
+    background: linear-gradient(90deg, #8a6000, #fddb92 35%, #fddb92 65%, #8a6000);
+    z-index: 2;
+    /* Stronger Shadows for high relief effect */
+    box-shadow: -1px 0 2px rgba(0, 0, 0, 0.8), 4px 0 8px rgba(0, 0, 0, 0.9);
+}
+
+.nut-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: var(--fret-width);
+    background: #cbd5e1;
+    z-index: 3;
+    left: 50px;
+    /* Width of col 0 */
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Note Interactive Area */
+.note-cell {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    /* Fill the grid cell entirely for easier clicking */
+    width: 100%;
+    height: 100%;
+}
+
+.note-circle {
+    width: min(26px, 85%);
+    height: auto;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+
+    /* Initially Invisible (No gray discs) */
+    background: rgba(255, 255, 255, 0.1);
+    /* Very faint guide on hover */
+    opacity: 0;
+    transform: scale(0.5);
+
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: clamp(10px, 1.5vw, 14px);
+    color: transparent;
+    border: 2px solid transparent;
+}
+
+/* On hover, show faint ghost to help aim, ONLY if not already revealed */
+.note-cell:hover .note-circle:not(.revealed) {
+    opacity: 0.5;
+    transform: scale(0.8);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Revealed State - Fully Visible */
+/* Adding .note-cell context to boost specificity if needed, or stick to .note-circle.revealed */
+.note-circle.revealed {
+    opacity: 1;
+    transform: scale(1) rotateY(360deg);
+    background: var(--note-revealed-bg);
+    color: var(--note-revealed-text);
+    border-color: var(--accent);
+    box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.note-circle.success {
+    background-color: #22c55e;
+    /* Green 500 */
+    border-color: #22c55e;
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+}
+
+.note-circle.error {
+    background-color: #ef4444;
+    /* Red 500 */
+    border-color: #ef4444;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+    animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
+}
+
+.note-circle.memory-target {
+    opacity: 1;
+    transform: scale(1);
+    background-color: #60a5fa;
+    /* Light Blue */
+    border-color: #93c5fd;
+    box-shadow: 0 0 15px rgba(96, 165, 250, 0.8);
+    color: transparent;
+    /* Extra safety to hide text if rendered */
+}
+
+@keyframes shake {
+
+    10%,
+    90% {
+        transform: translate3d(-1px, 0, 0);
+    }
+
+    20%,
+    80% {
+        transform: translate3d(2px, 0, 0);
+    }
+
+    30%,
+    50%,
+    70% {
+        transform: translate3d(-4px, 0, 0);
+    }
+
+    40%,
+    60% {
+        transform: translate3d(4px, 0, 0);
+    }
+}
+
+/* Game HUD */
+.game-hud {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 20px;
+    align-items: center;
+    background: rgba(30, 41, 59, 0.8);
+    padding: 15px 30px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+}
+
+.target-note {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #f8fafc;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+}
+
+.score-board {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.score-stats {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+/* Fret Numbers */
+.fret-numbers {
+    display: grid;
+    grid-template-columns:
+        50px minmax(0, 1.431fr) minmax(0, 1.351fr) minmax(0, 1.275fr) minmax(0, 1.203fr) minmax(0, 1.136fr) minmax(0, 1.072fr) minmax(0, 1.012fr) minmax(0, 0.955fr) minmax(0, 0.902fr) minmax(0, 0.851fr) minmax(0, 0.803fr) minmax(0, 0.758fr) minmax(0, 0.716fr) minmax(0, 0.675fr) minmax(0, 0.638fr) minmax(0, 0.602fr) minmax(0, 0.568fr) minmax(0, 0.536fr) minmax(0, 0.506fr) minmax(0, 0.478fr) minmax(0, 0.451fr) minmax(0, 0.425fr);
+    margin-top: 15px;
+}
+
+.fret-number-cell {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    user-select: none;
+}
+
+@keyframes flyToTarget {
+    0% {
+        transform: translate(0, 0) scale(0.5);
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1.5);
+    }
+
+    90% {
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(var(--target-x), var(--target-y)) scale(0.5);
+        opacity: 0;
+    }
+}
+
+@keyframes fallDown {
+    0% {
+        transform: translate(0, 0) rotate(0deg);
+        opacity: 1;
+    }
+
+    20% {
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(var(--drift-x), 300px) rotate(180deg);
+        opacity: 0;
+    }
+}

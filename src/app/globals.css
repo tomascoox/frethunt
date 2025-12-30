@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+:root {
+  --bg-primary: #0f172a;
+  /* Slate 900 */
+  --bg-secondary: #1e293b;
+  /* Slate 800 */
+  --text-primary: #f8fafc;
+  /* Slate 50 */
+  --text-secondary: #94a3b8;
+  /* Slate 400 */
+  --accent: #14b8a6;
+  /* Teal 500 */
+  --accent-glow: rgba(20, 184, 166, 0.5);
+  --fret-wire: #cbd5e1;
+  /* Slate 300 */
+  --string-color: #e2e8f0;
+  /* Slate 200 */
+  --note-hidden: rgba(51, 65, 85, 0.5);
+  /* Slate 700 with 50% opacity */
+  /* Slate 700 */
+  --note-revealed-bg: rgba(20, 184, 166, 0.8);
+  /* Teal with 80% opacity */
+  /* Slate 50 */
+  /* Slate 900 */
+  --inlay-color: rgba(255, 255, 255, 0.9);
+  /* Pure white, highly visible */
+}
+
+
+html,
+body {
+  overscroll-behavior: none;
+  overflow: hidden;
+  /* STOP SCROLLING */
+  height: 100%;
+  width: 100%;
+  position: fixed;
+  /* Nuclear option for iOS bounce */
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+
+  /* NATIVE APP FEEL */
+  -webkit-user-select: none;
+  /* Safari */
+  -moz-user-select: none;
+  /* Firefox */
+  -ms-user-select: none;
+  /* IE10+/Edge */
+  user-select: none;
+  /* Standard */
+
+  -webkit-touch-callout: none;
+  /* Disable iOS context menu */
+  touch-action: pan-x pan-y;
+  /* Disable double-tap zoom, allow scroll */
+}
+
+/* Scrollbar for horizontal scroll on mobile */
+::-webkit-scrollbar {
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
