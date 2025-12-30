@@ -1926,7 +1926,7 @@ export default function Fretboard({
                             // visualIndex 5 = Low E (String 0)
                             const sIndex = 5 - visualIndex;
 
-                            const thickness = 1 + (5 - sIndex) * 0.6;
+                            const thickness = (1 + (5 - sIndex) * 0.6) * (isMobile ? 1 : 1.5);
                             const isWound = sIndex <= 2;
                             const isActive = practiceActive && currentStringIndex === sIndex;
                             const openNote = getNoteAt(sIndex, 0);
@@ -2194,7 +2194,7 @@ export default function Fretboard({
                                             // Since we have 6 rows...
 
                                             // Let's replicate the thickness logic
-                                            const thickness = 1 + (5 - sIndex) * 0.6;
+                                            const thickness = (1 + (5 - sIndex) * 0.6) * (isMobile ? 1 : 1.5);
                                             const isWound = sIndex <= 2;
                                             const isActive = practiceActive && currentStringIndex === sIndex; // Keep active highlight? Sure.
 
@@ -2251,7 +2251,7 @@ export default function Fretboard({
                                         const isWound = sIndex <= 2; // Low E, A, D are wound (indices 0, 1, 2)
 
                                         // Thickness: Low E (0) should be thickest. High E (5) thinnest.
-                                        const thickness = 1 + (5 - sIndex) * 0.6;
+                                        const thickness = (1 + (5 - sIndex) * 0.6) * (isMobile ? 1 : 1.5);
 
                                         return (
                                             <div
