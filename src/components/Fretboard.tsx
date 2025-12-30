@@ -146,8 +146,8 @@ export default function Fretboard({
         const unlockAudio = async () => {
             if (Tone.context.state !== 'running') {
                 await Tone.start();
-                console.log('Audio Context Resumed via Global Listener');
             }
+            setAudioEnabled(true);
             window.removeEventListener('pointerdown', unlockAudio);
             window.removeEventListener('keydown', unlockAudio);
         };
@@ -167,6 +167,7 @@ export default function Fretboard({
     const [revealed, setRevealed] = useState<Record<string, boolean>>({});
 
     // --- AUDIO & ASSETS ---
+    const [audioEnabled, setAudioEnabled] = useState<boolean>(false);
     const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
 
@@ -639,6 +640,7 @@ export default function Fretboard({
 
     // Initialize Synths
     useEffect(() => {
+        if (!audioEnabled) return;
         // OPTIMIZATION: Zero lookahead for instant response
         Tone.context.lookAhead = 0;
 
@@ -690,7 +692,7 @@ export default function Fretboard({
             bell.dispose();
             fail.dispose();
         };
-    }, []);
+    }, [audioEnabled]);
 
 
 
