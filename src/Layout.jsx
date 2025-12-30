@@ -233,16 +233,7 @@ export default function Layout({
                 alignItems: 'center',
                 justifyContent: 'flex-end'
             }}>
-                {/* FOOTER TEXT */}
-                <div style={{
-                    padding: '8px 0',
-                    color: '#475569',
-                    fontSize: '0.8rem',
-                    textAlign: 'center',
-                    width: '100%'
-                }}>
-                    Guitar Tools v1.0 created by Studio Joox AB
-                </div>
+
 
                 {/* ADSENSE UNIT */}
                 <div style={{
