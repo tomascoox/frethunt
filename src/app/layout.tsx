@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://frethunt.com'),
   title: "FretHunt - Master the Guitar Fretboard | Interactive Trainer",
   description: "Master the guitar fretboard with FretHunt. The fastest free way to memorize guitar notes using interactive gamification and real audio.",
   keywords: ["guitar fretboard", "learn guitar notes", "fretboard trainer", "music theory game", "guitar notes game"],

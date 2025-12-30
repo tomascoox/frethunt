@@ -65,7 +65,7 @@ export default function Layout({
                     </button>
 
                     <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '900', color: '#f8fafc', letterSpacing: '1px', fontStyle: 'italic' }}>
-                        Guitar <span style={{ color: '#3b82f6' }}>Tools</span>
+                        Fret<span style={{ color: '#3b82f6' }}>Hunt</span>
                     </h1>
                 </div>
 
