@@ -141,6 +141,26 @@ export default function Fretboard({
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
+    // --- AUDIO UNLOCKER ---
+    useEffect(() => {
+        const unlockAudio = async () => {
+            if (Tone.context.state !== 'running') {
+                await Tone.start();
+                console.log('Audio Context Resumed via Global Listener');
+            }
+            window.removeEventListener('pointerdown', unlockAudio);
+            window.removeEventListener('keydown', unlockAudio);
+        };
+
+        window.addEventListener('pointerdown', unlockAudio);
+        window.addEventListener('keydown', unlockAudio);
+
+        return () => {
+            window.removeEventListener('pointerdown', unlockAudio);
+            window.removeEventListener('keydown', unlockAudio);
+        };
+    }, []);
+
     // const [fretCount, setFretCount] = useState(13); // Props now
 
 
