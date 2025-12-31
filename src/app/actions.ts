@@ -2,8 +2,36 @@
 
 import { supabaseAdmin } from '@/lib/supabase';
 import { revalidatePath } from 'next/cache';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
 export async function saveToolAction(prevState: any, formData: FormData) {
+    // 1. AUTH & ADMIN CHECK
+    const cookieStore = await cookies();
+
+    // Create a temp client just to check auth
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() { return cookieStore.getAll() },
+                setAll(cookiesToSet) {
+                    try {
+                        cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
+                    } catch { }
+                },
+            },
+        }
+    );
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user || user.email !== 'tomas@joox.se') {
+        return { message: 'Unauthorized Access. Admin only.', success: false };
+    }
+
+    // 2. PROCEED WITH SAVE
     const slug = formData.get('slug') as string;
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
@@ -40,5 +68,30 @@ export async function saveToolAction(prevState: any, formData: FormData) {
     } catch (e: any) {
         console.error('Action Error:', e);
         return { message: 'Server Error: ' + e.message, success: false };
+    }
+}
+
+export async function sendLoginLink(prevState: any, formData: FormData) {
+    const email = formData.get('email') as string;
+
+    if (!email) {
+        return { message: 'Email is required', success: false };
+    }
+
+    try {
+        const { error } = await supabaseAdmin.auth.signInWithOtp({
+            email,
+            options: {
+                emailRedirectTo: process.env.NEXT_PUBLIC_SITE_URL || 'https://frethunt.vercel.app',
+            }
+        });
+
+        if (error) {
+            return { message: error.message, success: false };
+        }
+
+        return { message: 'Magic Link sent! Check your inbox.', success: true };
+    } catch (e: any) {
+        return { message: 'Error: ' + e.message, success: false };
     }
 }

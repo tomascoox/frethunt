@@ -151,7 +151,7 @@ export default function Fretboard({
     // ADMIN CHECK & PORTAL TARGET
     useEffect(() => {
         supabase.auth.getUser().then(({ data }: any) => {
-            if (data.user) setHasAdmin(true);
+            if (data.user && data.user.email === 'tomas@joox.se') setHasAdmin(true);
         });
         setNavbarContainer(document.getElementById('navbar-actions'));
     }, []);

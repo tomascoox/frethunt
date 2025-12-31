@@ -7,11 +7,23 @@ import { supabase } from '@/lib/supabase';
 export default function AdminToolsPage() {
     const [dbTools, setDbTools] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [authorized, setAuthorized] = useState(false);
 
-    // FETCH DB TOOLS ONLY
+    // FETCH DB TOOLS ONLY IF ADMIN
     useEffect(() => {
-        fetchDbTools();
+        checkAuth();
     }, []);
+
+    async function checkAuth() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && user.email === 'tomas@joox.se') {
+            setAuthorized(true);
+            fetchDbTools();
+        } else {
+            // Not admin? Go home.
+            window.location.href = '/';
+        }
+    }
 
     async function fetchDbTools() {
         setLoading(true);
@@ -25,6 +37,9 @@ export default function AdminToolsPage() {
         }
         setLoading(false);
     }
+
+    if (!authorized) return <div className="h-screen bg-slate-950 flex items-center justify-center text-slate-500 font-mono">Checking Access...</div>;
+
 
     async function deleteTool(slug: string) {
         if (!confirm(`Are you sure you want to DELETE /${slug}? This cannot be undone.`)) return;
