@@ -66,7 +66,7 @@ export async function sendLoginLink(prevState: any, formData: FormData) {
         const { error } = await supabaseAdmin.auth.signInWithOtp({
             email,
             options: {
-                emailRedirectTo: process.env.NEXT_PUBLIC_SITE_URL || 'https://frethunt.vercel.app',
+                emailRedirectTo: process.env.NEXT_PUBLIC_SITE_URL || 'https://frethunt.com',
             }
         });
 
