@@ -102,13 +102,7 @@ export function SaveToolModal({ open, onClose, currentSettings, initialData }: S
                         />
                     </div>
 
-                    <div className="bg-slate-950 p-3 rounded border border-slate-800/50">
-                        <p className="text-xs text-slate-500 font-mono">
-                            Saving: {currentSettings.initialPositions ? `${currentSettings.initialPositions.length} Exact Positions` : 'Standard Notes'}
-                            <br />
-                            Strings: {currentSettings.initialStrings ? currentSettings.initialStrings.join(', ') : 'All'}
-                        </p>
-                    </div>
+
 
                     {message && (
                         <div className={`p-3 rounded text-xs font-bold ${isSuccess ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
