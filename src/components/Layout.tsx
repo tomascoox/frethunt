@@ -1,6 +1,8 @@
 'use client';
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { GameMode, AccidentalMode } from '../types';
+import { supabase } from '@/lib/supabase';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -30,6 +32,14 @@ export default function Layout({
     accidentalMode, setAccidentalMode
 }: LayoutProps) {
 
+    const [isAdmin, setIsAdmin] = useState(false);
+
+    React.useEffect(() => {
+        supabase.auth.getUser().then(({ data }: any) => {
+            if (data.user && data.user.email === 'tomas@joox.se') setIsAdmin(true);
+        });
+    }, []);
+
 
 
     return (
@@ -58,7 +68,7 @@ export default function Layout({
                 <div style={{ display: 'flex', gap: '30px', alignItems: 'center' }}>
                     <div id="navbar-actions"></div>
                     <button
-                        onClick={() => setShowSettings(true)}
+                        onClick={() => setShowSettings(!showSettings)}
                         style={{ background: 'transparent', border: 'none', fontSize: '1.8rem', cursor: 'pointer', filter: 'grayscale(100%) opacity(0.5)', transition: 'all 0.2s' }}
                         onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.filter = 'none'}
                         onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.filter = 'grayscale(100%) opacity(0.5)'}
@@ -72,93 +82,88 @@ export default function Layout({
             {/* SPACER FOR FIXED NAVBAR */}
             <div style={{ height: '90px' }} />
 
-            {/* SETTINGS SIDEBAR (RIGHT DRAWER) */}
-            {showSettings && (
-                <div style={{
-                    position: 'fixed', top: '70px', right: 0, width: '280px', bottom: 0,
-                    background: '#1e293b', borderLeft: '1px solid #334155',
-                    zIndex: 1999, padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px',
-                    boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
-                    animation: 'slideInRight 0.2s ease-out'
-                }}>
-                    <div className="flex justify-between items-center pb-4 border-b border-slate-700">
-                        <h2 className="text-xl font-bold text-slate-100 italic tracking-wider">SETTINGS</h2>
-                        <button onClick={() => setShowSettings(false)} className="text-slate-400 hover:text-white text-2xl">×</button>
-                    </div>
+            {/* SETTINGS SIDEBAR (RIGHT DRAWER) - ALWAYS RENDERED FOR ANIMATION */}
+            <div style={{
+                position: 'fixed', top: '70px', right: 0, width: '280px', bottom: 0,
+                background: '#1e293b', borderLeft: '1px solid #334155',
+                zIndex: 3000, padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px',
+                boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
+                transform: showSettings ? 'translateX(0)' : 'translateX(100%)',
+                transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)', // Smooth iOS-like ease
+                visibility: showSettings ? 'visible' : 'hidden' // Hide from screen readers/tab when closed
+            }}>
+                <div className="flex justify-between items-center pb-4 border-b border-slate-700">
+                    <h2 className="text-xl font-bold text-slate-100 italic tracking-wider">SETTINGS</h2>
+                    <button onClick={() => setShowSettings(false)} className="text-slate-400 hover:text-white text-2xl">×</button>
+                </div>
 
-                    {/* ACCIDENTALS TOGGLE - GLOBAL */}
-                    <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
-                        <label className="text-xs font-bold text-slate-400 tracking-widest mb-3 block">ACCIDENTALS</label>
-                        <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-800">
-                            <button
-                                onClick={() => setAccidentalMode('sharp')}
-                                className={`flex-1 py-2 rounded-md text-xs font-bold transition-all ${accidentalMode === 'sharp'
-                                    ? 'bg-purple-600 text-white shadow-lg'
-                                    : 'text-slate-500 hover:text-slate-300'
-                                    }`}
-                            >
-                                SHARPS ♯
-                            </button>
-                            <button
-                                onClick={() => setAccidentalMode('flat')}
-                                className={`flex-1 py-2 rounded-md text-xs font-bold transition-all ${accidentalMode === 'flat'
-                                    ? 'bg-purple-600 text-white shadow-lg'
-                                    : 'text-slate-500 hover:text-slate-300'
-                                    }`}
-                            >
-                                FLATS ♭
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* PRO MODE TOGGLE */}
-                    <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 flex items-center justify-between">
-                        <div>
-                            <span className={`block font-bold text-sm ${proMode ? 'text-emerald-400' : 'text-slate-300'}`}>PRO MODE</span>
-                            <span className="text-[0.65rem] text-slate-500 font-bold block mt-1">UNLOCK ALL FEATURES</span>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" checked={proMode} onChange={(e) => setProMode(e.target.checked)} className="sr-only peer" />
-                            <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-                        </label>
-                    </div>
-
-                    {/* FRET COUNT SLIDER */}
-                    <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
-                        <label className="text-xs font-bold text-slate-400 tracking-widest mb-3 block flex justify-between">
-                            <span>BOARD SIZE</span>
-                            <span className="text-white">{fretCount} FRETS</span>
-                        </label>
-                        <input
-                            type="range"
-                            min="12" max="24"
-                            value={fretCount}
-                            onChange={(e) => setFretCount(parseInt(e.target.value))}
-                            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                        />
-                    </div>
-
-                    {/* DANGER ZONE */}
-                    <div className="mt-auto pt-4 border-t border-slate-800">
+                {/* ACCIDENTALS TOGGLE - GLOBAL */}
+                <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                    <label className="text-xs font-bold text-slate-400 tracking-widest mb-3 block">ACCIDENTALS</label>
+                    <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-800">
                         <button
-                            onClick={() => { if (confirm('Reset all XP and progress?')) { setTotalXP(0); localStorage.setItem('fretboardXP', '0'); setShowSettings(false); } }}
-                            className="w-full py-3 rounded-lg bg-red-900/20 text-red-500 text-xs font-bold border border-red-900/50 hover:bg-red-900/40 hover:text-red-400 transition-colors"
+                            onClick={() => setAccidentalMode('sharp')}
+                            className={`flex-1 py-2 rounded-md text-xs font-bold transition-all ${accidentalMode === 'sharp'
+                                ? 'bg-purple-600 text-white shadow-lg'
+                                : 'text-slate-500 hover:text-slate-300'
+                                }`}
                         >
-                            RESET PROGRESS
+                            SHARPS ♯
+                        </button>
+                        <button
+                            onClick={() => setAccidentalMode('flat')}
+                            className={`flex-1 py-2 rounded-md text-xs font-bold transition-all ${accidentalMode === 'flat'
+                                ? 'bg-purple-600 text-white shadow-lg'
+                                : 'text-slate-500 hover:text-slate-300'
+                                }`}
+                        >
+                            FLATS ♭
                         </button>
                     </div>
-
-                    <style>{`@keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
                 </div>
-            )}
 
-            {/* CLICK OUTSIDE FOR SETTINGS */}
-            {showSettings && (
-                <div
-                    onClick={() => setShowSettings(false)}
-                    style={{ position: 'fixed', top: '70px', left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1998 }}
-                />
-            )}
+                {/* PRO MODE REMOVED */}
+
+                {/* FRET COUNT SLIDER */}
+                <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                    <label className="text-xs font-bold text-slate-400 tracking-widest mb-3 block flex justify-between">
+                        <span>BOARD SIZE</span>
+                        <span className="text-white">{fretCount} FRETS</span>
+                    </label>
+                    <input
+                        type="range"
+                        min="12" max="24"
+                        value={fretCount}
+                        onChange={(e) => setFretCount(parseInt(e.target.value))}
+                        className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    />
+                </div>
+
+                {/* SPACER pushes content up */}
+                <div className="mt-auto"></div>
+
+                {/* ADMIN LINK (Only visible to Admin) */}
+                {isAdmin && (
+                    <div className="pt-4 border-t border-slate-800">
+                        <Link href="/admin/tools" className="block w-full text-center py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs uppercase tracking-widest rounded transition-colors shadow-lg">
+                            URL ADMIN
+                        </Link>
+                    </div>
+                )}
+            </div>
+
+            {/* CLICK OUTSIDE FOR SETTINGS (Backdrop Fade) */}
+            <div
+                onClick={() => setShowSettings(false)}
+                style={{
+                    position: 'fixed', top: '70px', left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.5)',
+                    zIndex: 1998,
+                    opacity: showSettings ? 1 : 0,
+                    pointerEvents: showSettings ? 'auto' : 'none',
+                    transition: 'opacity 0.3s ease'
+                }}
+            />
 
             {/* MAIN CONTENT WRAPPER */}
             <div style={{
