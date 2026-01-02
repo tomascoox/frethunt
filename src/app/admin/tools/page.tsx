@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { saveToolAction, bulkImportToolsAction, deleteAllToolsAction } from '@/app/actions';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import Layout from '@/components/Layout';
+import { BulkImportModal } from '@/components/BulkImportModal';
 import { GameMode, AccidentalMode } from '@/types';
 
 export default function AdminToolsPage() {
@@ -11,6 +13,7 @@ export default function AdminToolsPage() {
     const [dbTools, setDbTools] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
+    const [showBulkImport, setShowBulkImport] = useState(false);
 
     // --- LAYOUT STATE (Navbar Integration) ---
     const [activeGameMode, setActiveGameMode] = useState<GameMode>('memory');
@@ -40,6 +43,24 @@ export default function AdminToolsPage() {
         } else {
             window.location.href = '/';
         }
+    }
+
+    // --- HELPERS ---
+    async function handleDeleteAll() {
+        if (!window.confirm('WARNING: THIS WILL DELETE ALL TOOLS PERMANENTLY.\n\nAre you absolutely sure?')) return;
+
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token;
+        if (!token) return alert("Not authenticated");
+
+        const fd = new FormData();
+        fd.append('access_token', token);
+
+        setLoading(true);
+        const res = await deleteAllToolsAction(null, fd);
+        alert(res.message);
+        if (res.success) fetchDbTools();
+        setLoading(false);
     }
 
     async function fetchDbTools() {
@@ -97,9 +118,23 @@ export default function AdminToolsPage() {
                                 You have <b>{dbTools.length}</b> live landing pages.
                             </p>
                         </div>
-                        <Link href="/" className="px-4 py-2 bg-slate-800 rounded hover:bg-slate-700 font-bold border border-slate-700 text-sm">
-                            + New Tool (Go to App)
-                        </Link>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleDeleteAll}
+                                className="px-4 py-2 bg-red-900/50 hover:bg-red-900 text-red-200 border border-red-800 rounded font-bold text-xs tracking-widest transition-all"
+                            >
+                                ☠️ DELETE ALL
+                            </button>
+                            <button
+                                onClick={() => setShowBulkImport(true)}
+                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded font-bold text-sm shadow-lg transition-all flex items-center gap-2"
+                            >
+                                ⚡ BULK IMPORT
+                            </button>
+                            <Link href="/" className="px-4 py-2 bg-slate-800 rounded hover:bg-slate-700 font-bold border border-slate-700 text-sm flex items-center">
+                                + NEW TOOL
+                            </Link>
+                        </div>
                     </header>
 
                     {/* TABLE */}
@@ -157,6 +192,13 @@ export default function AdminToolsPage() {
                     </div>
                 </div>
             </div>
-        </Layout>
+
+
+            <BulkImportModal
+                open={showBulkImport}
+                onClose={() => setShowBulkImport(false)}
+                onSuccess={fetchDbTools}
+            />
+        </Layout >
     );
 }

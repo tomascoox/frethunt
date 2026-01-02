@@ -1944,7 +1944,15 @@ export default function Fretboard({
 
             {
                 activeGameMode === 'memory' && memoryGameActive && (
-                    <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: '60px', marginBottom: '60px', padding: '0 20px' }}>
+                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '60px', marginBottom: '60px', padding: '0 20px' }}>
+
+                        {toolMetadata && (
+                            <p className="text-center text-slate-400 text-xs sm:text-sm max-w-md mb-6 leading-relaxed animate-in fade-in slide-in-from-bottom-2 duration-700 font-medium">
+                                Choose the correct note in the circle!<br />
+                                To add more notes, <span className="text-white font-bold">stop the quiz</span> and use custom note selection. Good luck!
+                            </p>
+                        )}
+
                         <button
                             onClick={() => stopMemoryGame(false)}
                             className="h-9 px-6 sm:h-12 sm:px-8 rounded-lg font-bold text-xs sm:text-base bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 transition-all shadow-xl shadow-black/40"

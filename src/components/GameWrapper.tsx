@@ -62,6 +62,7 @@ function GameWrapper({ initialNotes, initialStrings, initialPositions, disablePe
       setTotalXP={setTotalXP}
       accidentalMode={accidentalMode}
       setAccidentalMode={setAccidentalMode}
+      pageTitle={toolMetadata?.title}
     >
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '0' }}>
         <Fretboard

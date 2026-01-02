@@ -79,3 +79,68 @@ export async function sendLoginLink(prevState: any, formData: FormData) {
         return { message: 'Error: ' + e.message, success: false };
     }
 }
+
+
+export async function bulkImportToolsAction(prevState: any, formData: FormData) {
+    // 1. AUTH CHECK
+    const accessToken = formData.get('access_token') as string;
+    const { data: { user } } = await supabaseAdmin.auth.getUser(accessToken);
+
+    if (!user || user.email !== 'tomas@joox.se') {
+        return { message: 'Unauthorized. Admin only.', success: false };
+    }
+
+    // 2. PARSE FILE
+    const file = formData.get('file') as File;
+    if (!file) return { message: 'No file uploaded', success: false };
+
+    try {
+        const text = await file.text();
+        const tools = JSON.parse(text);
+
+        if (!Array.isArray(tools)) return { message: 'JSON root must be an Array []', success: false };
+
+        // 3. MAP TO DB (FLAT JSON -> DB STRUCTURE)
+        const toolsToInsert = tools.map((item: any) => ({
+            slug: item.slug,
+            title: item.title,
+            description: item.description,
+            game_settings: {
+                initialNotes: item.initialNotes || ["C", "D", "E"], // Fallback safe
+                initialStrings: item.initialStrings || [0, 1, 2, 3, 4, 5],
+                initialPositions: item.initialPositions || [] // Support precise positions
+            }
+        }));
+
+        // 4. UPSERT
+        const { error } = await supabaseAdmin
+            .from('tools')
+            .upsert(toolsToInsert, { onConflict: 'slug' });
+
+        if (error) return { message: 'DB Error: ' + error.message, success: false };
+
+        revalidatePath('/');
+        return { message: `Success! Imported ${toolsToInsert.length} tools.`, success: true };
+    } catch (e: any) {
+        return { message: 'Invalid JSON File: ' + e.message, success: false };
+    }
+}
+
+export async function deleteAllToolsAction(prevState: any, formData: FormData) {
+    const accessToken = formData.get('access_token') as string;
+    const { data: { user } } = await supabaseAdmin.auth.getUser(accessToken);
+
+    if (!user || user.email !== 'tomas@joox.se') {
+        return { message: 'Unauthorized.', success: false };
+    }
+
+    const { error } = await supabaseAdmin
+        .from('tools')
+        .delete()
+        .neq('slug', '_'); // Delete all rows
+
+    if (error) return { message: 'DB Error: ' + error.message, success: false };
+
+    revalidatePath('/');
+    return { message: 'All tools deleted.', success: true };
+}

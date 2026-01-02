@@ -19,6 +19,7 @@ interface LayoutProps {
     setTotalXP: (xp: number) => void;
     accidentalMode: AccidentalMode;
     setAccidentalMode: (mode: AccidentalMode) => void;
+    pageTitle?: string;
 }
 
 export default function Layout({
@@ -29,7 +30,8 @@ export default function Layout({
     proMode, setProMode,
     fretCount, setFretCount,
     totalXP, setTotalXP,
-    accidentalMode, setAccidentalMode
+    accidentalMode, setAccidentalMode,
+    pageTitle
 }: LayoutProps) {
 
     const [isAdmin, setIsAdmin] = useState(false);
@@ -60,8 +62,14 @@ export default function Layout({
                 {/* LEFT: BRAND */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <Link href="/" style={{ textDecoration: 'none' }}>
-                        <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '900', color: '#f8fafc', letterSpacing: '1px', fontStyle: 'italic', cursor: 'pointer' }}>
-                            Fret<span style={{ color: '#3b82f6' }}>Hunt</span>
+                        <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '900', color: '#f8fafc', letterSpacing: '1px', fontStyle: 'italic', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                            <span>Fret<span style={{ color: '#3b82f6' }}>Hunt</span></span>
+                            {pageTitle && (
+                                <span className="hidden sm:flex items-center ml-3 text-lg font-normal not-italic text-slate-500">
+                                    <span className="mx-2">|</span>
+                                    <span className="text-slate-100">{pageTitle}</span>
+                                </span>
+                            )}
                         </h1>
                     </Link>
                 </div>

@@ -48,10 +48,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     if (!tool) return {};
 
     return {
-        title: tool.title,
+        title: `${tool.title} | FretHunt`,
         description: tool.description,
         openGraph: {
-            title: tool.title,
+            title: `${tool.title} | FretHunt`,
             description: tool.description,
             type: 'website',
         },
