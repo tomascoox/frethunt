@@ -30,6 +30,9 @@ export const metadata: Metadata = {
     title: 'FretHunt',
     description: 'Master the guitar fretboard interactively.',
   },
+  alternates: {
+    canonical: './',
+  },
 };
 
 export default function RootLayout({
