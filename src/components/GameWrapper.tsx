@@ -12,9 +12,10 @@ interface GameWrapperProps {
   disablePersistence?: boolean;
   toolMetadata?: { slug: string; title: string; description: string };
   startInEditMode?: boolean;
+  children?: React.ReactNode;
 }
 
-function GameWrapper({ initialNotes, initialStrings, initialPositions, disablePersistence, toolMetadata, startInEditMode }: GameWrapperProps) {
+function GameWrapper({ initialNotes, initialStrings, initialPositions, disablePersistence, toolMetadata, startInEditMode, children }: GameWrapperProps) {
   // --- LIFTED STATE ---
   const [activeGameMode, setActiveGameMode] = useState<GameMode>('memory'); // Default to Note Hunt
   const [showSettings, setShowSettings] = useState(false);
@@ -84,6 +85,7 @@ function GameWrapper({ initialNotes, initialStrings, initialPositions, disablePe
           startInEditMode={startInEditMode}
         />
         {!toolMetadata && <HomeMarketing />}
+        {children}
       </div>
     </Layout>
   )

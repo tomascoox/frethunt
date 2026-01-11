@@ -19,6 +19,7 @@ export async function saveToolAction(prevState: any, formData: FormData) {
     const slug = formData.get('slug') as string;
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
+    const content = formData.get('content') as string; // New Content Field
     const gameSettingsJson = formData.get('gameSettings') as string;
 
     // Basic Validation
@@ -35,6 +36,7 @@ export async function saveToolAction(prevState: any, formData: FormData) {
                 slug,
                 title,
                 description,
+                content, // Save content
                 game_settings: gameSettings,
                 // created_at is default now() usually, but upsert might need it if we want to update timestamp
             }, { onConflict: 'slug' });

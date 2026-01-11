@@ -8,7 +8,7 @@ interface SaveToolModalProps {
     open: boolean;
     onClose: () => void;
     currentSettings: any;
-    initialData?: { slug: string; title: string; description: string };
+    initialData?: { slug: string; title: string; description: string; content?: string };
 }
 
 export function SaveToolModal({ open, onClose, currentSettings, initialData }: SaveToolModalProps) {
@@ -101,11 +101,23 @@ export function SaveToolModal({ open, onClose, currentSettings, initialData }: S
                         <textarea
                             name="description"
                             required
-                            rows={3}
+                            rows={2}
                             placeholder="Brief description for search engines..."
                             defaultValue={initialData?.description}
                             className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm focus:border-amber-500 outline-none"
                         />
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Page Content (HTML Allowed)</label>
+                        <textarea
+                            name="content"
+                            rows={8}
+                            placeholder="<p>Write your article here...</p>"
+                            defaultValue={initialData?.content}
+                            className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm focus:border-amber-500 outline-none font-mono"
+                        />
+                        <p className="text-[10px] text-slate-500 mt-1">Rendered below the game. Use HTML tags for formatting.</p>
                     </div>
 
 
