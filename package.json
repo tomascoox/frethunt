@@ -40,6 +40,9 @@
     },
     "filelist": {
       "minimatch": "^5.1.7"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": ">=9.0.7"
     }
   }
 }
