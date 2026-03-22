@@ -1,0 +1,29 @@
+name: Dependabot auto-merge
+on: pull_request
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  dependabot:
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - name: Merge pull request
+        run: gh pr merge --merge "$PR_URL"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      - name: Send email notification
+        if: success()
+        env:
+          RESEND_API_KEY: ${{secrets.RESEND_API_KEY}}
+          PR_TITLE: ${{github.event.pull_request.title}}
+          PR_URL: ${{github.event.pull_request.html_url}}
+          REPO: ${{github.repository}}
+        run: |
+          curl -s -X POST https://api.resend.com/emails \
+            -H "Authorization: Bearer $RESEND_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"from\":\"noreply@github.joox.se\",\"to\":[\"tomas@joox.se\"],\"subject\":\"Dependabot merged: $PR_TITLE\",\"html\":\"<p><b>$REPO</b></p><p><a href='$PR_URL'>$PR_TITLE</a></p>\"}"
