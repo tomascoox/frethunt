@@ -50,7 +50,7 @@
     },
     "rollup": ">=2.80.0",
     "serialize-javascript": ">=7.0.3",
-    "lodash": ">=4.17.23",
+    "lodash": ">=4.18.1",
     "@ducanh2912/next-pwa": {
       "ajv": ">=8.18.0"
     }
