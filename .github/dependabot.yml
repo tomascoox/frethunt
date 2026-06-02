@@ -10,6 +10,17 @@ updates:
       security-patches:
         applies-to: security-updates
         patterns: ["*"]
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+      next:
+        patterns:
+          - "next"
+          - "eslint-config-next"
+          - "@next/*"
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
