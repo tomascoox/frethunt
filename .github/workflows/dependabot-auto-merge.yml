@@ -1,32 +1,103 @@
 name: Dependabot auto-merge
-on: pull_request
+# En dependabot-PR mergas först när Vercels preview-bygge av PR:ens senaste commit är grönt.
+# - pull_request: grinden mot semver-major (fetch-metadata) godkänner commiten med en commit-status.
+# - deployment_status: Vercel rapporterar ett färdigt bygge (success eller failure) när det är klart.
+# Båda händelserna kör samma kontroll, och den som kommer sist mergar. Ingen väntan och ingen polling:
+# misslyckat bygge, uteblivet bygge eller semver-major lämnar PR:en öppen.
+on:
+  pull_request:
+  deployment_status:
 
 permissions:
   contents: write
   pull-requests: write
+  statuses: write
+  deployments: read
 
 jobs:
   dependabot:
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]'
+    if: >-
+      (github.event_name == 'pull_request' && github.actor == 'dependabot[bot]') ||
+      (github.event_name == 'deployment_status' &&
+       github.event.deployment_status.state == 'success' &&
+       github.event.deployment.environment == 'Preview' &&
+       github.event.deployment.creator.login == 'vercel[bot]')
+    concurrency:
+      group: dependabot-auto-merge-${{ github.event.pull_request.head.sha || github.event.deployment.sha }}
+    timeout-minutes: 5
     steps:
       - name: Dependabot metadata
         id: meta
+        if: github.event_name == 'pull_request'
         uses: dependabot/fetch-metadata@v2
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
-      - name: Enable auto-merge
-        if: steps.meta.outputs.update-type != 'version-update:semver-major'
-        run: gh pr merge --auto --merge "$PR_URL"
+      - name: Approve commit for auto-merge
+        if: github.event_name == 'pull_request' && steps.meta.outputs.update-type != 'version-update:semver-major'
+        run: |
+          gh api "repos/$REPO/statuses/$SHA" \
+            -f state=success \
+            -f context=dependabot-auto-merge/eligible \
+            -f description="Inte semver-major - mergas när Vercels preview-bygge är grönt"
         env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Merge when Vercel preview is green
+        id: merge
+        if: github.event_name == 'deployment_status' || steps.meta.outputs.update-type != 'version-update:semver-major'
+        run: |
+          set -euo pipefail
+          if [[ ! "$SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Ogiltig commit-SHA: '$SHA'"
+            exit 1
+          fi
+
+          # 1. En öppen dependabot-PR i detta repo vars senaste commit är exakt denna SHA.
+          PR=$(gh api "repos/$REPO/commits/$SHA/pulls" --jq '[.[] | select(.state == "open" and .head.sha == env.SHA and (.head.ref | startswith("dependabot/")) and .user.login == "dependabot[bot]" and .head.repo.full_name == env.REPO)] | first | select(. != null) | "\(.html_url)\t\(.title)"')
+          if [[ -z "$PR" ]]; then
+            echo "Ingen öppen dependabot-PR med $SHA som senaste commit. Inget att göra."
+            exit 0
+          fi
+          PR_URL=${PR%%$'\t'*}
+          PR_TITLE=${PR#*$'\t'}
+
+          # 2. Grinden mot semver-major har godkänt just denna commit.
+          ELIGIBLE=$(gh api "repos/$REPO/commits/$SHA/statuses" --jq '[.[] | select(.context == "dependabot-auto-merge/eligible" and .creator.login == "github-actions[bot]")] | first | select(. != null) | .state')
+          if [[ "$ELIGIBLE" != "success" ]]; then
+            echo "$PR_URL: commiten är inte godkänd av grinden (semver-major eller grinden har inte körts än). Mergas inte."
+            exit 0
+          fi
+
+          # 3. Vercels senaste preview-bygge av denna commit är grönt.
+          DEPLOY_ID=$(gh api "repos/$REPO/deployments?sha=$SHA&environment=Preview&per_page=10" --jq '[.[] | select(.creator.login == "vercel[bot]")] | first | select(. != null) | .id')
+          if [[ -z "$DEPLOY_ID" ]]; then
+            echo "$PR_URL: Vercel har inte rapporterat något preview-bygge än. Mergas när bygget är grönt."
+            exit 0
+          fi
+          GREEN=$(gh api "repos/$REPO/deployments/$DEPLOY_ID/statuses" --jq '[.[].state] | any(. == "success") and (.[0] == "success" or .[0] == "inactive")')
+          if [[ "$GREEN" != "true" ]]; then
+            echo "$PR_URL: preview-bygget är inte grönt. PR:en lämnas öppen."
+            exit 0
+          fi
+
+          gh pr merge --merge --match-head-commit "$SHA" "$PR_URL"
+          {
+            echo "merged=true"
+            echo "pr_url=$PR_URL"
+            echo "pr_title=$PR_TITLE"
+          } >> "$GITHUB_OUTPUT"
+        env:
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.pull_request.head.sha || github.event.deployment.sha }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Send email notification
-        if: success() && steps.meta.outputs.update-type != 'version-update:semver-major'
+        if: steps.merge.outputs.merged == 'true'
         env:
           RESEND_API_KEY: ${{secrets.RESEND_API_KEY}}
-          PR_TITLE: ${{github.event.pull_request.title}}
-          PR_URL: ${{github.event.pull_request.html_url}}
+          PR_TITLE: ${{ steps.merge.outputs.pr_title }}
+          PR_URL: ${{ steps.merge.outputs.pr_url }}
           REPO: ${{github.repository}}
         run: |
           curl -s -X POST https://api.resend.com/emails \
