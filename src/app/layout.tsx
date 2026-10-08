@@ -17,6 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://frethunt.vercel.app'),
+  verification: { google: '1AxvmIPk8FALgWHx1-eah2pVqBD_h9cdcHH9dIFiGIY' },
   title: "Master the Guitar Fretboard | FretHunt",
   description: "Master the guitar fretboard with FretHunt. The fastest free way to memorize guitar notes using interactive gamification and real audio.",
   keywords: ["guitar fretboard", "learn guitar notes", "fretboard trainer", "music theory game", "guitar notes game"],
