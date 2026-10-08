@@ -60,7 +60,7 @@ export default function TermsPage() {
                     <div className="border-t border-slate-700 pt-8 mt-8">
                         <h2 className="text-xl font-bold text-white mb-2">Contact Us</h2>
                         <p>
-                            If you have questions regarding these Terms, please contact us at: <a href="mailto:hello@frethunt.com" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">hello@frethunt.com</a>
+                            If you have questions regarding these Terms, please contact us at: <a href="mailto:info@joox.se" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">info@joox.se</a>
                         </p>
                     </div>
                 </section>

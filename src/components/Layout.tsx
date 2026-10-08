@@ -232,7 +232,7 @@ export default function Layout({
                     <Link href="/tools" className="hover:text-slate-400 transition-colors">Tools</Link>
                     <Link href="/terms" className="hover:text-slate-400 transition-colors">Terms</Link>
                     <Link href="/privacy" className="hover:text-slate-400 transition-colors">Privacy</Link>
-                    <a href="mailto:hello@frethunt.com" className="hover:text-slate-400 transition-colors">Contact</a>
+                    <a href="mailto:info@joox.se" className="hover:text-slate-400 transition-colors">Contact</a>
                 </div>
             </div>
         </>
