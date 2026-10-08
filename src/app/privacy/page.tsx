@@ -22,7 +22,7 @@ export default function PrivacyPage() {
                     <div>
                         <h2 className="text-2xl font-semibold text-white mb-3">1. Introduction</h2>
                         <p>
-                            FretHunt ("we," "us," or "our") operates the website https://frethunt.com (the "Service").
+                            FretHunt ("we," "us," or "our") operates the website https://frethunt.vercel.app (the "Service").
                             We are committed to protecting your privacy and ensuring you have a positive experience on our website.
                             This Privacy Policy sets forth our policy with respect to information that is collected from visitors to the Service.
                         </p>

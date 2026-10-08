@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-    const baseUrl = 'https://frethunt.com'; // Replace with env var in production
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://frethunt.vercel.app';
 
     // 1. Static Routes
     const routes = [
